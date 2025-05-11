@@ -1,6 +1,6 @@
 /*
 * Simple Models Adjuster
-* Copyright (c) 2025 Adi <adriank@gmail.com>
+* Copyright (c) 2025 Adi <adriank3d@gmail.com>
 * Licensed under the MIT License (http://opensource.org/licenses/MIT)
 */
 #include "StoreAdjuster.hpp"

@@ -1,7 +1,7 @@
 /*
 * Streaming Adjuster
 * Copyright (c) 2016 aap <aap@papnet.eu>
-* Copyright (c) 2025 Adi <adriank@gmail.com>
+* Copyright (c) 2025 Adi <adriank3d@gmail.com>
 * Licensed under the MIT License (http://opensource.org/licenses/MIT)
 */
 
@@ -16,8 +16,8 @@ std::vector<char> aInfoForModel;
 
 short numDefaultModelInfoPtrs = 0;
 int numDefaultTxdStore = 0;
-short numModelInfoPtrs;
-int numTxdStore;
+short numModelInfoPtrs = 0;
+int numTxdStore = 0;
 
 
 // convenience functions as the infoForModel patch relies on the other two but they could be disabled in the ini
@@ -207,7 +207,7 @@ void PatchStreamingIII()
         WriteMemory(0x43744A, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x43780A, &modelInfoPtrs[0] + 0x1D0, true);
         WriteMemory(0x437819, &modelInfoPtrs[0] + 0x0, true);
-        WriteMemory(0x437819, &modelInfoPtrs[0] + 0x0, true);
+        WriteMemory(0x43C5E9, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x449A88, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x449FED, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x44A2EB, &modelInfoPtrs[0] + 0x0, true);
@@ -258,9 +258,9 @@ void PatchStreamingIII()
         WriteMemory(0x476D83, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x4773B2, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x4777DC, &modelInfoPtrs[0] + 0x0, true);
+        WriteMemory(0x477EB1, &modelInfoPtrs[0] + 0x31C, true);
         WriteMemory(0x478147, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x478727, &modelInfoPtrs[0] + 0x0, true);
-        WriteMemory(0x477EB1, &modelInfoPtrs[0] + 0x31C, true);
         WriteMemory(0x479AEE, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x491152, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x49B8FD, &modelInfoPtrs[0] + 0x0, true);
@@ -440,7 +440,7 @@ void PatchStreamingIII()
         WriteMemory(0x585075, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x596DED, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x596E33, &modelInfoPtrs[0] + 0x0, true);
-    }
+    }                                                                           
     if (ShouldPatchTxdStore())
     {
         int numTxdStore = GetNumTxdStore();
