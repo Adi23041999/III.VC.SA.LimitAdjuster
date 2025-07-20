@@ -5,6 +5,9 @@
 #pragma once
 #include "stdint.h"
 #include "Matrix.h"
+#include "injector/injector.hpp"
+
+using namespace injector;
 
 struct CPlaceable
 {
@@ -65,10 +68,10 @@ static_assert(sizeof(CPhysical) == 0x128, "");
 namespace CCamera
 {
 	typedef bool(__thiscall* _IsSphereVisible1)(void* ECX, const CVector& point, float radius, CMatrix* mat);
-	_IsSphereVisible1 IsSphereVisible1 = (_IsSphereVisible1)0x42C760;
+	_IsSphereVisible1 IsSphereVisible1 = GetBranchDestination(raw_ptr(0x42C5BB)).get();
 
 	typedef bool(__thiscall* _IsSphereVisible2)(void* ECX, const CVector& point, float radius);
-	_IsSphereVisible2 IsSphereVisible2 = (_IsSphereVisible2)0x43D3B0;
+	_IsSphereVisible2 IsSphereVisible2 = GetBranchDestination(raw_ptr(0x43D2F4)).get();
 
 	struct CCamera : public CPlaceable
 	{
@@ -91,18 +94,24 @@ static_assert(sizeof(CCamera::CCamera) == 0xE9D8, "");
 
 namespace CWorld
 {
-	auto FindGroundZFor3DCoord = (float(__cdecl*)(float x, float y, float z, bool* outResult)) 0x4B3AE0;
-	auto GetIsLineOfSightClear = (bool(__cdecl*)(const CVector& origin, const CVector& target, bool buildings, bool vehicles, bool peds, bool objects, bool dummies, bool doSeeThroughCheck, bool doCameraIgnoreCheck)) 0x4AEAA0;
+	typedef float(__cdecl* _FindGroundZFor3DCoord)(float x, float y, float z, bool* outResult);
+	_FindGroundZFor3DCoord FindGroundZFor3DCoord = GetBranchDestination(raw_ptr(0x42C68C)).get();
+
+	typedef bool(__cdecl* _GetIsLineOfSightClear)(const CVector& origin, const CVector& target, bool buildings, bool vehicles, bool peds, bool objects, bool dummies, bool doSeeThroughCheck, bool doCameraIgnoreCheck);
+	_GetIsLineOfSightClear GetIsLineOfSightClear = GetBranchDestination(raw_ptr(0x42BC51)).get();
 }
 
 namespace CFileMgr
 {
-	auto SetDir = (void(__cdecl*)(const char* dir)) 0x479020;
+	typedef void(__cdecl* _SetDir)(const char* dir);
+	_SetDir SetDir = GetBranchDestination(raw_ptr(0x429C0C)).get();
 }
 
 namespace CGeneral
 {
-	auto GetRadianAngleBetweenPoints = (float(__cdecl*)(float x1, float y1, float x2, float y2)) 0x48CA50;
+	typedef float(__cdecl* _GetRadianAngleBetweenPoints)(float x1, float y1, float x2, float y2);
+	_GetRadianAngleBetweenPoints GetRadianAngleBetweenPoints = GetBranchDestination(raw_ptr(0x42DBB9)).get();
+
 	//auto GetRandomNumber = (uint32(__cdecl*)()) 0x54A4B0;
 
 	// paths don't generate vehicles correctly with the broken random number generator
@@ -123,5 +132,6 @@ namespace CGeneral
 
 namespace CCollision
 {
-	auto DistToLine = (float(__cdecl*)(const CVector* lineStart, const CVector* lineEnd, const CVector* point)) 0x40DC70;
+	typedef float(__cdecl* _DistToLine)(const CVector* lineStart, const CVector* lineEnd, const CVector* point);
+	_DistToLine DistToLine = GetBranchDestination(raw_ptr(0x42D41B)).get();
 }

@@ -339,6 +339,9 @@ CPathFind::PreparePathDataForType(uint8 type, CTempNode *tempnodes, CPathInfoFor
 	int start;
 	float posx, posy;
 	float dx, dy, mag;
+#ifdef FIX_BUGS
+	float dz;
+#endif
 	float nearestDist;
 	int nearestId;
 	int next;
@@ -420,8 +423,16 @@ CPathFind::PreparePathDataForType(uint8 type, CTempNode *tempnodes, CPathInfoFor
 				if(Abs(dx) < nearestDist){
 					dy = tempnodes[k].pos.y - CoorsXFormed.y;
 					if(Abs(dy) < nearestDist){
+#ifdef FIX_BUGS
+						dz = tempnodes[k].pos.z - CoorsXFormed.z;
+						if(Abs(dz) < nearestDist){
+							nearestDist = Max(Max(Abs(dx), Abs(dy)), Abs(dz));
+							nearestId = k;
+						}
+#else
 						nearestDist = Max(Abs(dx), Abs(dy));
 						nearestId = k;
+#endif
 					}
 				}
 			}
