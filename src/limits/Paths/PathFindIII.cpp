@@ -11,9 +11,7 @@
 #include "Types/Entities.h"
 
 #pragma warning( disable : 4244 )
-
 CCamera::CCamera& TheCamera = *(CCamera::CCamera*)0x6FACF8;
-#define FIX_BUGS
 
 CPathFind ThePaths;
 
@@ -93,7 +91,9 @@ CPathFind::StoreNodeInfoPed(int16 id, int16 node, int8 type, int8 next, int16 x,
 	InfoForTilePeds[i].z = z;
 	InfoForTilePeds[i].numLeftLanes = 0;
 	InfoForTilePeds[i].numRightLanes = 0;
-	InfoForTilePeds[i].crossing = crossing;
+	InfoForTilePeds[i].flags = 0;
+	if (crossing)
+		InfoForTilePeds[i].flags |= FLAG_CROSSES_ROAD;
 
 	if(type)
 		for(i = 0; i < node; i++){
@@ -108,7 +108,7 @@ CPathFind::StoreNodeInfoPed(int16 id, int16 node, int8 type, int8 next, int16 x,
 }
 
 void
-CPathFind::StoreNodeInfoCar(int16 id, int16 node, int8 type, int8 next, int16 x, int16 y, int16 z, int16 width, int8 numLeft, int8 numRight)
+CPathFind::StoreNodeInfoCar(int16 id, int16 node, int8 type, int8 next, int16 x, int16 y, int16 z, int16 width, int8 numLeft, int8 numRight, uint8 flags)
 {
 	int i, j;
 
@@ -120,6 +120,7 @@ CPathFind::StoreNodeInfoCar(int16 id, int16 node, int8 type, int8 next, int16 x,
 	InfoForTileCars[i].z = z;
 	InfoForTileCars[i].numLeftLanes = numLeft;
 	InfoForTileCars[i].numRightLanes = numRight;
+	InfoForTileCars[i].flags = flags;
 
 
 	if(type)
@@ -452,6 +453,7 @@ CPathFind::PreparePathDataForType(uint8 type, CTempNode *tempnodes, CPathInfoFor
 				if(type == PATH_CAR){
 					tempnodes[TempListLength].numLeftLanes = objectpathinfo[start + j].numLeftLanes;
 					tempnodes[TempListLength].numRightLanes = objectpathinfo[start + j].numRightLanes;
+					tempnodes[TempListLength].blockOneWayRoadSwitch = !!(objectpathinfo[start + j].flags & FLAG_BLOCK_ONE_WAY_ROAD_SWITCH);
 				}
 				tempnodes[TempListLength++].linkState = 1;
 			}else{
@@ -464,6 +466,9 @@ CPathFind::PreparePathDataForType(uint8 type, CTempNode *tempnodes, CPathInfoFor
 						next++;
 				}
 				tempnodes[nearestId].link2 = m_mapObjects[i]->m_nodeIndices[type][next];
+				if (type == PATH_CAR && !tempnodes[nearestId].blockOneWayRoadSwitch) {
+					tempnodes[nearestId].blockOneWayRoadSwitch = !!(objectpathinfo[start + j].flags & FLAG_BLOCK_ONE_WAY_ROAD_SWITCH);
+				}
 				tempnodes[nearestId].linkState = 2;
 
 				// collapse this node with nearest we found
@@ -531,6 +536,7 @@ CPathFind::PreparePathDataForType(uint8 type, CTempNode *tempnodes, CPathInfoFor
 					m_carPathLinks[m_numCarPathLinks].numLeftLanes = tempnodes[j].numLeftLanes;
 					m_carPathLinks[m_numCarPathLinks].numRightLanes = tempnodes[j].numRightLanes;
 					m_carPathLinks[m_numCarPathLinks].trafficLightType = 0;
+					m_carPathLinks[m_numCarPathLinks].bBlockOneWayRoadSwitch = tempnodes[j].blockOneWayRoadSwitch;
 					assert(m_numCarPathLinks <= NUM_CARPATHLINKS);
 					m_carPathConnections[m_numConnections] = m_numCarPathLinks++;
 				}
@@ -597,13 +603,20 @@ CPathFind::PreparePathDataForType(uint8 type, CTempNode *tempnodes, CPathInfoFor
 						m_carPathLinks[m_numCarPathLinks].numLeftLanes = -1;
 						m_carPathLinks[m_numCarPathLinks].numRightLanes = -1;
 						m_carPathLinks[m_numCarPathLinks].trafficLightType = 0;
+						// Blocks one way road switch
+						if (objectpathinfo[istart + iseg].next == jseg && !!(objectpathinfo[istart + iseg].flags & FLAG_BLOCK_ONE_WAY_ROAD_SWITCH) ||
+							objectpathinfo[jstart + jseg].next == iseg && !!(objectpathinfo[jstart + jseg].flags & FLAG_BLOCK_ONE_WAY_ROAD_SWITCH))
+							m_carPathLinks[m_numCarPathLinks].bBlockOneWayRoadSwitch = true;
+						else
+							m_carPathLinks[m_numCarPathLinks].bBlockOneWayRoadSwitch = false;
+
 						assert(m_numCarPathLinks <= NUM_CARPATHLINKS);
 						m_carPathConnections[m_numConnections] = m_numCarPathLinks++;
 					}
 				}else{
 					// Crosses road
-					if(objectpathinfo[istart + iseg].next == jseg && objectpathinfo[istart + iseg].crossing ||
-					   objectpathinfo[jstart + jseg].next == iseg && objectpathinfo[jstart + jseg].crossing)
+					if (objectpathinfo[istart + iseg].next == jseg && !!(objectpathinfo[istart + iseg].flags & FLAG_CROSSES_ROAD) ||
+						objectpathinfo[jstart + jseg].next == iseg && !!(objectpathinfo[jstart + jseg].flags & FLAG_CROSSES_ROAD))
 						m_connectionFlags[m_numConnections].bCrossesRoad = true;
 					else
 						m_connectionFlags[m_numConnections].bCrossesRoad = false;
@@ -815,8 +828,9 @@ CPathFind::SetLinksBridgeLights(float x1, float x2, float y1, float y2, bool ena
 	for(i = 0; i < m_numCarPathLinks; i++){
 		CVector2D pos = m_carPathLinks[i].GetPosition();
 		if(x1 < pos.x && pos.x < x2 &&
-		   y1 < pos.y && pos.y < y2)
+		   y1 < pos.y && pos.y < y2){
 			m_carPathLinks[i].bBridgeLights = enable;
+		}
 	}
 }
 

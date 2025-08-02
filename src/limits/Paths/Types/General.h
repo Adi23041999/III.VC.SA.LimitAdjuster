@@ -11,6 +11,7 @@ typedef int16_t int16;
 typedef uint32_t uint32;
 typedef int32_t int32;
 
+#define FIX_BUGS
 #define Max(a,b) ((a) > (b) ? (a) : (b))
 #define Min(a,b) ((a) < (b) ? (a) : (b))
 #define PI (float)M_PI
@@ -20,3 +21,4 @@ typedef int32_t int32;
 #define RADTODEG(x) ((x) * 180.0f / PI)
 inline float sq(float x) { return x * x; }
 #define ARRAY_SIZE(array)                (sizeof(array) / sizeof(array[0]))
+#define SQR(x) ((x) * (x))

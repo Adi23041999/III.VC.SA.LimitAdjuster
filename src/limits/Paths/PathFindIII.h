@@ -113,6 +113,17 @@ union CConnectionFlags
 	};
 };
 
+enum
+{
+	// flags read from path definitions
+
+	// m_carPathLinks
+	FLAG_BLOCK_ONE_WAY_ROAD_SWITCH = 1 << 0,
+
+	// m_connectionFlags
+	FLAG_CROSSES_ROAD = 1 << 0,
+};
+
 struct CCarPathLink
 {
 	CVector2D pos;
@@ -122,7 +133,8 @@ struct CCarPathLink
 	int8 numRightLanes;
 	uint8 trafficLightType;
 
-	uint8 bBridgeLights /*: 1*/;
+	uint8 bBridgeLights : 1;
+	uint8 bBlockOneWayRoadSwitch : 1;
 	// more?
 
 	CVector2D& GetPosition(void) { return pos; }
@@ -152,7 +164,7 @@ struct CPathInfoForObject
 	int8 next;
 	int8 numLeftLanes;
 	int8 numRightLanes;
-	uint8 crossing : 1;
+	uint8 flags;
 };
 extern CPathInfoForObject* InfoForTileCars;
 extern CPathInfoForObject* InfoForTilePeds;
@@ -167,6 +179,7 @@ struct CTempNode
 	int8 numLeftLanes;
 	int8 numRightLanes;
 	int8 linkState;
+	uint8 blockOneWayRoadSwitch : 1;
 };
 
 struct CTempDetachedNode	// unused
@@ -200,7 +213,7 @@ public:
 	void AllocatePathFindInfoMem(int16 numPathGroups);
 	void RegisterMapObject(CTreadable* mapObject);
 	void StoreNodeInfoPed(int16 id, int16 node, int8 type, int8 next, int16 x, int16 y, int16 z, int16 width, bool crossing);
-	void StoreNodeInfoCar(int16 id, int16 node, int8 type, int8 next, int16 x, int16 y, int16 z, int16 width, int8 numLeft, int8 numRight);
+	void StoreNodeInfoCar(int16 id, int16 node, int8 type, int8 next, int16 x, int16 y, int16 z, int16 width, int8 numLeft, int8 numRight, uint8 flags);
 	void CalcNodeCoors(int16 x, int16 y, int16 z, int32 id, CVector* out);
 	bool LoadPathFindData(void);
 	void PreparePathData(void);

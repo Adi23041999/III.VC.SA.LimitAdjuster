@@ -7,6 +7,10 @@
 #pragma once
 #include "LimitAdjuster.h"
 #include "PathFindIII.h"
+#include "Types/General.h"
+#ifdef FIX_BUGS
+#include "PathFindingFixes.h"
+#endif
 
 using namespace injector;
 
@@ -28,10 +32,12 @@ namespace PathFindWrappers
     {
         ThePaths.StoreNodeInfoPed(id, node, type, next, x, y, z, width, crossing);
     }
+#ifndef FIX_BUGS
     static void __fastcall StoreNodeInfoCar(void* ECX, void* EDX, int16 id, int16 node, int8 type, int8 next, int16 x, int16 y, int16 z, int16 width, int8 numLeft, int8 numRight)
     {
         ThePaths.StoreNodeInfoCar(id, node, type, next, x, y, z, width, numLeft, numRight);
     }
+#endif
     static void __fastcall PreparePathData(void* ECX, void* EDX)
     {
         ThePaths.PreparePathData();
@@ -126,6 +132,7 @@ namespace PathFindWrappers
     }
 }
 
+
 class PathsIII : public SimpleAdjuster
 {
 public:
@@ -140,6 +147,12 @@ public:
         // would be nice to expose to the ini but probably too much hassle
         if (std::stoi(value) <= 0)
             return;
+
+#ifdef FIX_BUGS
+        MakeCALL(0x41BAD1, PathFindingFixes::PickNextNodeRandomly);
+        MakeCALL(0x476D41, PathFindingFixes::LoadCarPathNode);
+        MakeCALL(0x476EF0, PathFindingFixes::LoadCarPathNode);
+#endif
 
         WriteMemory(0x4788B0, &InfoForTileCars, true);
         WriteMemory(0x4788C2, &InfoForTilePeds, true);
@@ -508,8 +521,8 @@ public:
         WriteMemory(0x45568D, &ThePaths.m_carPathLinks->dir.y, true);
         WriteMemory(0x455695, &ThePaths.m_carPathLinks->pos.x, true);
         WriteMemory(0x45569B, &ThePaths.m_carPathLinks->dir.x, true);
-        WriteMemory(0x456470, &ThePaths.m_carPathLinks->bBridgeLights, true);
-        WriteMemory(0x456484, &ThePaths.m_carPathLinks->bBridgeLights, true);
+        WriteMemory(0x456470, &ThePaths.m_carPathLinks->trafficLightType + 0x1, true); // flags
+        WriteMemory(0x456484, &ThePaths.m_carPathLinks->trafficLightType + 0x1, true); // flags
         WriteMemory(0x476E2F, &ThePaths, true);
         WriteMemory(0x477FD6, &ThePaths, true);
         WriteMemory(0x4780C4, &ThePaths, true);
@@ -614,7 +627,9 @@ public:
         MakeCALL(0x58AAF3, PathFindWrappers::FindNodeOrientationForCarPlacementFacingDestination);
         MakeCALL(0x48BFC9, PathFindWrappers::AllocatePathFindInfoMem);
         MakeCALL(0x476E3D, PathFindWrappers::AllocatePathFindInfoMem);
+#ifndef FIX_BUGS
         MakeCALL(0x4780C9, PathFindWrappers::StoreNodeInfoCar);
+#endif
         MakeCALL(0x477FDB, PathFindWrappers::StoreNodeInfoPed);
         MakeCALL(0x44265A, PathFindWrappers::SwitchRoadsOffInArea);
         MakeCALL(0x44257D, PathFindWrappers::SwitchRoadsOffInArea);
