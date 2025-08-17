@@ -1,13 +1,38 @@
 /*
 * Clump Models Adjuster
 * Copyright (c) 2014 LINK/2012 <dma_2012@hotmail.com>
+* Copyright (c) 2025 Adi <adriank3d@gmail.com>
 * Licensed under the MIT License (http://opensource.org/licenses/MIT)
 */
 #include "StoreAdjuster.hpp"
 #include "utility/dummy_object.hpp"
 
+typedef dummy_object_vmt<0x34, 0x50C040> CClumpModelInfo_III;
 typedef dummy_object_vmt<0x24, 0x4C56F0> CClumpModelInfo_SA;
 typedef dummy_object_vmt<0x30, 0x5601C0> CClumpModelInfo_VC;
+
+struct ClumpModelsIII : public StoreAdjuster<CClumpModelInfo_III, 0x6FA108, 5>    // T, pDefaultStore, dwDefaultCapacity
+{
+	const char* GetLimitName()
+	{
+		return IsIII() ? "ClumpModels" : nullptr;
+	}
+    ClumpModelsIII()
+	{
+        this->SetGrower(0x477955);
+		this->AddPointer(0x50B3E4);
+		this->AddPointer(0x50B679);
+		this->AddPointer(0x50B681);
+		this->AddPointer(0x50B698);
+		this->AddPointer(0x50B804);
+		this->AddPointer(0x50BA12);
+        this->AddPointer(0x50BA2D);
+        this->AddPointer(0x50BA35);
+        this->AddPointer(0x50BA3E);
+
+		if (GetLimitName()) injector::MakeNOP(0x50BA25, 5, true);
+	}
+} ClumpModelsIII;
 
 struct ClumpModelsVC : public StoreAdjuster<CClumpModelInfo_VC, 0x752988, 5>    // T, pDefaultStore, dwDefaultCapacity
 {
