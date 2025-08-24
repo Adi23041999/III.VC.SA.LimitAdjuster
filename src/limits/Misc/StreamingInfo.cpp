@@ -731,8 +731,11 @@ public:
             numTxdStore = std::stoi(value);
             break;
         }
+	}
 
-		if (GetGVM().IsIII())
+    void Process()
+    {
+        if (GetGVM().IsIII())
         {
             modelInfoPtrs_t = 0x30;
             infoForModel_t = 0x14;
@@ -740,7 +743,6 @@ public:
             numDefaultTxdStore = 850;
             PatchStreamingIII();
         }
-
-	}
+    }
 
 } StreamingInfo;
