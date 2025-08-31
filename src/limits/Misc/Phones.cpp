@@ -64,7 +64,7 @@ public:
     {        
         numPhones = std::stoi(value); 
         size_t gPhoneInfo_t = 0x8 + (numPhones * 0x34);
-        gPhoneInfo.reserve(gPhoneInfo_t);
+        gPhoneInfo.resize(gPhoneInfo_t);
         std::fill(gPhoneInfo.begin(), gPhoneInfo.end(), 0U);
         
         WriteMemory(0x42F743, &gPhoneInfo[0] + 0x8 + 0x2C, true);

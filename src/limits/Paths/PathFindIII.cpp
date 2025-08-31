@@ -222,7 +222,12 @@ CPathFind::PreparePathData(void)
 					numIntern++;
 			}
 
-			if(numIntern == 1 && numExtern == 2){
+			// why limit it to 3 node objects?
+#ifdef FIX_BUGS
+			if(numExtern == 2){
+#else
+			if (numIntern == 1 && numExtern == 2) {
+#endif
 				if(numLanes < 4){
 					if((i & 7) == 4){		// 1/8 probability
 						m_objectFlags[i] |= UseInRoadBlock;

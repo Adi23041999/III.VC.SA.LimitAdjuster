@@ -132,7 +132,6 @@ namespace PathFindWrappers
     }
 }
 
-
 class PathsIII : public SimpleAdjuster
 {
 public:
