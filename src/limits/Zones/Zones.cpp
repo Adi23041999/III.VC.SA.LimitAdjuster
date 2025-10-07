@@ -7,8 +7,12 @@
 
 using namespace injector;
 
-int numAudioZones, numZones, numZonesInfos, numMapZones;
-char numZoneSfxes;
+char numAudioZones = 36;
+int numZones = 50;
+int numZonesInfos = numZones * 2;
+int numMapZones = 25;
+char numZoneSfxes = 36;
+
 std::vector<short> AudioZoneArray;
 std::vector<char> ZoneSfx;
 std::vector<char> ZoneArray;
@@ -24,45 +28,46 @@ struct tPoliceRadioZone {
 #pragma region asm
 
 DWORD _temp;
-DWORD ext_4B5E2A = 0x4B5E2A;
-DWORD ext_4B5DE8 = 0x4B5DE8;
-void __declspec(naked) InitHook()
-{
-    __asm
-    {
-        cmp eax, numAudioZones
-        jb loc_4B5DE8
-        jmp ext_4B5E2A
-    loc_4B5DE8 :
-        jmp ext_4B5DE8
-    }
-}
-
-DWORD ext_4B8933 = 0x4B8933;
-DWORD ext_4B88D0 = 0x4B88D0;
-void __declspec(naked) SaveAllZonesHook1()
-{
-    __asm
-    {
-        cmp ecx, numAudioZones
-        mov[esi], edx
-        jb loc_4B88D0
-        jmp ext_4B8933
-    loc_4B88D0 :
-        jmp ext_4B88D0
-    }
-}
-
-DWORD ext_4B8D49 = 0x4B8D49;
-void __declspec(naked) LoadAllZonesHook1()
-{
-    __asm
-    {
-        mov di, [esi]
-        cmp ecx, numAudioZones
-        jmp ext_4B8D49
-    }
-}
+//DWORD ext_4B5E2A = 0x4B5E2A;
+//DWORD ext_4B5DE8 = 0x4B5DE8;
+//void __declspec(naked) InitHook()
+//{
+//    __asm
+//    {
+//        cmp eax, numAudioZones
+//        jb loc_4B5DE8
+//        jmp ext_4B5E2A
+//    loc_4B5DE8 :
+//        jmp ext_4B5DE8
+//    }
+//}
+//
+//DWORD ext_4B8933 = 0x4B8933;
+//DWORD ext_4B88D0 = 0x4B88D0;
+//void __declspec(naked) SaveAllZonesHook1()
+//{
+//    __asm
+//    {
+//        cmp ecx, numAudioZones
+//        mov[esi], edx
+//        jb loc_4B88D0
+//        jmp ext_4B8933
+//    loc_4B88D0 :
+//        jmp ext_4B88D0
+//    }
+//}
+//
+//DWORD ext_4B8D51 = 0x4B8D51;
+//void __declspec(naked) LoadAllZonesHook1()
+//{
+//    __asm
+//    {
+//        mov edi, [esi]
+//        cmp ecx, numAudioZones
+//        mov[eax * 2 + AudioZoneArray], edi
+//        jmp ext_4B8D51
+//    }
+//}
 
 //DWORD ext_57FC90 = 0x57FC90;
 //DWORD ext_57F65B = 0x57F65B;
@@ -159,7 +164,7 @@ void __declspec(naked) LoadAllZonesHook2()
 
 DWORD ext_4F3B85 = 0x4F3B85;
 DWORD ext_4F3AD6 = 0x4F3AD6;
-void __declspec(naked) AddToPopulationHook()
+void __declspec(naked) GeneratePedsAtStartOfGameHook()
 {
     __asm
     {
@@ -267,14 +272,15 @@ void __declspec(naked) LoadAllZonesHook4()
 void PatchAudioZonesIII()
 {
     AudioZoneArray.resize(numAudioZones);
+    //MakeRangedNOP(0x4B5DEE, 0x4B5E24);
     std::fill(AudioZoneArray.begin(), AudioZoneArray.end(), -1);
-
-    WriteMemory(0x4B5DF2, &AudioZoneArray[0] + 0x0, true);
-    WriteMemory(0x4B5DFB, &AudioZoneArray[0] + 0x2, true);
-    WriteMemory(0x4B5E04, &AudioZoneArray[0] + 0x4, true);
-    WriteMemory(0x4B5E0D, &AudioZoneArray[0] + 0x6, true);
-    WriteMemory(0x4B5E16, &AudioZoneArray[0] + 0x8, true);
-    WriteMemory(0x4B5E1F, &AudioZoneArray[0] + 0xA, true);
+    
+    //WriteMemory(0x4B5DF2, &AudioZoneArray[0] + 0x0, true);
+    //WriteMemory(0x4B5DFB, &AudioZoneArray[0] + 0x2, true);
+    //WriteMemory(0x4B5E04, &AudioZoneArray[0] + 0x4, true);
+    //WriteMemory(0x4B5E0D, &AudioZoneArray[0] + 0x6, true);
+    //WriteMemory(0x4B5E16, &AudioZoneArray[0] + 0x8, true);
+    //WriteMemory(0x4B5E1F, &AudioZoneArray[0] + 0xA, true);
     WriteMemory(0x4B8377, &AudioZoneArray[0] + 0x0, true);
     WriteMemory(0x4B83F9, &AudioZoneArray[0] + 0x0, true);
     WriteMemory(0x4B88DD, &AudioZoneArray[0] + 0x0, true);
@@ -292,9 +298,12 @@ void PatchAudioZonesIII()
     WriteMemory(0x57F66A, &AudioZoneArray[0], true);
     WriteMemory(0x580586, &AudioZoneArray[0], true);
 
-    MakeJMP(0x4B5E24, InitHook);
-    MakeJMP(0x4B892A, SaveAllZonesHook1);
-    MakeJMP(0x4B8D42, LoadAllZonesHook1);
+    //MakeJMP(0x4B5E24, InitHook);
+
+    //MakeJMP(0x4B892A, SaveAllZonesHook1);
+    WriteMemory(0x4B892D, numAudioZones, true);
+    //MakeJMP(0x4B8D42, LoadAllZonesHook1);
+    WriteMemory(0x4B8D48, numAudioZones, true);
 }
 
 void PatchZoneSfxIII()
@@ -302,20 +311,18 @@ void PatchZoneSfxIII()
     ZoneSfx.resize(sizeof(tPoliceRadioZone) * numZoneSfxes);
 
     // init loop
-    MakeRangedNOP(0x57EAD0, 0x57EB58);
-    std::fill(ZoneSfx.begin(), ZoneSfx.end(), 0);
-    //WriteMemory(0x57EAD5, ZoneSfx + 0x0, true);
-    //WriteMemory(0x57EADF, ZoneSfx + 0x4, true);
-    //WriteMemory(0x57EAE9, ZoneSfx + 0x10, true);
-    //WriteMemory(0x57EAF3, ZoneSfx + 0x14, true);
-    //WriteMemory(0x57EAFD, ZoneSfx + 0x20, true);
-    //WriteMemory(0x57EB07, ZoneSfx + 0x24, true);
-    //WriteMemory(0x57EB11, ZoneSfx + 0x30, true);
-    //WriteMemory(0x57EB1B, ZoneSfx + 0x34, true);
-    //WriteMemory(0x57EB25, ZoneSfx + 0x40, true);
-    //WriteMemory(0x57EB2F, ZoneSfx + 0x44, true);
-    //WriteMemory(0x57EB39, ZoneSfx + 0x50, true);
-    //WriteMemory(0x57EB43, ZoneSfx + 0x54, true);
+    WriteMemory(0x57EAD5, &ZoneSfx[0] + 0x0, true);
+    WriteMemory(0x57EADF, &ZoneSfx[0] + 0x4, true);
+    WriteMemory(0x57EAE9, &ZoneSfx[0] + 0x10, true);
+    WriteMemory(0x57EAF3, &ZoneSfx[0] + 0x14, true);
+    WriteMemory(0x57EAFD, &ZoneSfx[0] + 0x20, true);
+    WriteMemory(0x57EB07, &ZoneSfx[0] + 0x24, true);
+    WriteMemory(0x57EB11, &ZoneSfx[0] + 0x30, true);
+    WriteMemory(0x57EB1B, &ZoneSfx[0] + 0x34, true);
+    WriteMemory(0x57EB25, &ZoneSfx[0] + 0x40, true);
+    WriteMemory(0x57EB2F, &ZoneSfx[0] + 0x44, true);
+    WriteMemory(0x57EB39, &ZoneSfx[0] + 0x50, true);
+    WriteMemory(0x57EB43, &ZoneSfx[0] + 0x54, true);
 
     WriteMemory(0x57EB59, &ZoneSfx[0] + 0x0, true);
     WriteMemory(0x57EB65, &ZoneSfx[0] + 0x10, true);
@@ -401,7 +408,7 @@ void PatchZoneSfxIII()
     //MakeJMP(0x57F6A7, SetupCrimeReportHook2);
     WriteMemory(0x57F6B3, numZoneSfxes, true);
     //MakeJMP(0x57F6B1, SetupCrimeReportHook3);
-    //WriteMemory(0x57EB51, numZoneSfxes, true); // init
+    WriteMemory(0x57EB51, numZoneSfxes, true); // init
     WriteMemory(0x580576, numZoneSfxes, true);
     WriteMemory(0x5805CC, numZoneSfxes, true);
     WriteMemory(0x5805C7, numZoneSfxes, true);
@@ -418,8 +425,9 @@ void PatchZoneArrayIII()
     ZoneArray.resize(0x38 * numZones);
 
     // init loop
-    MakeRangedNOP(0x4B5E37, 0x4B5ECF);
+    //MakeRangedNOP(0x4B5E38, 0x4B5EC2);
     std::fill(ZoneArray.begin(), ZoneArray.end(), 0);
+    
     //WriteMemory(0x4B5E3A, &ZoneArray[0] + 0x0 + 0x0, true);
     //WriteMemory(0x4B5E44, &ZoneArray[0] + 0x4 + 0x0, true);
     //WriteMemory(0x4B5E4E, &ZoneArray[0] + 0x8 + 0x0, true);
@@ -515,7 +523,7 @@ void PatchZoneArrayIII()
     MakeJMP(0x4B835B, AddZoneToAudioZoneArrayHook);
     MakeJMP(0x4B865D, SaveAllZonesHook2);
     MakeJMP(0x4B8A75, LoadAllZonesHook2);
-    MakeJMP(0x4F3B7B, AddToPopulationHook);
+    MakeJMP(0x4F3B7B, GeneratePedsAtStartOfGameHook);
 }
 
 void PatchZoneInfoArrayIII()
@@ -719,6 +727,15 @@ void PatchMapZoneArrayIII()
     MakeJMP(0x4B8CE0, LoadAllZonesHook4);
 }
 
+void ZonesReloadIII()
+{
+    WriteMemory<unsigned short>(0x95CC84, 0, true);
+    //std::fill(AudioZoneArray.begin(), AudioZoneArray.end(), -1);
+    std::fill(ZoneArray.begin(), ZoneArray.end(), 0);
+    //std::fill(ZoneInfoArray.begin(), ZoneInfoArray.end(), 0);
+    //std::fill(MapZoneArray.begin(), MapZoneArray.end(), 0);
+}
+
 class GameZones : public Adjuster
 {
 public:
@@ -752,21 +769,22 @@ public:
             switch (id)
             {
             case AudioZones:
-                numAudioZones = std::stoi(value);
+                //numAudioZones = std::stoi(value);
+                numAudioZones = (char)min(std::stoi(value), 127); // currently limited to 127
                 numZoneSfxes = (char)min(numAudioZones, 127); // currently limited to 127
-				PatchAudioZonesIII();
-				PatchZoneSfxIII();
+                PatchAudioZonesIII();
+                PatchZoneSfxIII();
                 break;
             case Zones:
                 numZones = std::stoi(value);
 			    numZonesInfos = numZones * 2;
-				PatchZoneArrayIII();
-				PatchZoneInfoArrayIII();
+                PatchZoneArrayIII();
+                PatchZoneInfoArrayIII();
                 break;
             case MapZones:
                 numMapZones = std::stoi(value);
-				PatchMapZoneArrayIII();
-				break;
+                PatchMapZoneArrayIII();
+                break;
             }
         }
     }
@@ -775,6 +793,9 @@ public:
     {
         if (GetGVM().IsIII())
         {
+            MakeRangedNOP(0x4B5E2C, 0x4B5E35);
+            MakeCALL(0x4B5E2C, ZonesReloadIII);
+
             // patch save size
             int zoneSize = 10100;
             // audio zones

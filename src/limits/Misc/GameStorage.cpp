@@ -28,7 +28,8 @@ public:
         size_t work_buff_t = 55000 * multiplier;
         int SIZE_OF_ONE_GAME_IN_BYTES = 0x31401 * multiplier;
 		work_buff.resize(work_buff_t);
-        
+        std::fill(work_buff.begin(), work_buff.end(), 0);
+
         // work_buff (used to store read data)
         WriteMemory(0x478B60, &work_buff[0] + 0x18, true);
         WriteMemory(0x478B6A, &work_buff[0] + 0x0, true);
