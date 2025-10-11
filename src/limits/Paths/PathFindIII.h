@@ -5,8 +5,9 @@
 #pragma once
 
 #include "stdint.h"
-#include "Types/Vector.h"
-#include "Types/Matrix.h"
+#include "CVector.h"
+#include "CVector2D.h"
+#include "CMatrix.h"
 #include "Types/General.h"
 
 // Defaults

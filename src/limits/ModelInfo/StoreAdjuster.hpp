@@ -8,7 +8,7 @@
 #include "utility/PointerAdjuster.hpp"
 #include "DynamicStore.hpp"
 #include <algorithm>
-#include <injector/utility.hpp>
+#include <utility.hpp>
 
 /*
     StoreAdjuster

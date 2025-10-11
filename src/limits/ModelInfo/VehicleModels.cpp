@@ -5,7 +5,7 @@
 */
 #include "StoreAdjuster.hpp"
 #include "utility/dummy_object.hpp"
-#include "injector/utility.hpp"
+#include "utility.hpp"
 
 static injector::hook_back<void*(__fastcall*)(void*)> hb_ctor;
 

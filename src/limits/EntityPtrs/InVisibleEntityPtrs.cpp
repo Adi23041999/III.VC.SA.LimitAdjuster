@@ -6,7 +6,7 @@
 */
 #include "LimitAdjuster.h"
 #include "utility/StaticArrayAdjuster.hpp"
-#include <injector/assembly.hpp>
+#include <assembly.hpp>
 
 /*
     VisibilityPtrsBase

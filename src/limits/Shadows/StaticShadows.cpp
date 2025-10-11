@@ -4,9 +4,9 @@
  * http://gtaforums.com/topic/675664-staticshadow-limit/
  */
 #include "LimitAdjuster.h"
-#include "cpatch/hook.h"
+#include "Patch.h"
 
-using namespace Hook;
+using namespace injector;
 
 DWORD SSHADS_LIMIT;
 
@@ -63,21 +63,21 @@ void PatchShadowsStored()
     AdjustPointer(0x400000+0x30B569, &asShadowsStored[0], 0xC40430, 0xC40DF0);
     AdjustPointer(0x400000+0x30B578, &asShadowsStored[0], 0xC40430, 0xC40DF0);
     AdjustPointer(0x400000+0x30B594, &asShadowsStored[0], 0xC40430, 0xC40DF0);
-
-    RedirectJump(0x707391, patch_707391);
-    Nop(0x7073AA, 1);								// mov eax, esi
-    SetUChar(0x7073AB, 0x8B);
-    Nop(0x707439, 1);								// inc esi
-    Nop(0x707441, 1);								// mov ds:[0C403DCh], esi
-    Nop(0x70A9E0, 1);								// mov ecx, ds:[0C403DCh]
-    SetUChar(0x70A9E1, 0x8B);
-    Nop(0x70AA3F, 2);								// mov eax, ds:[0C403DCh]
-    SetUChar(0x70AA41, 0xA1);
-    Nop(0x70ADF9, 1);								// mov ecx, ds:[0C403DCh]
-    SetUChar(0x70ADFA, 0x8B);
-    Nop(0x70B6C1, 1);								// mov ecx, ds:[0C403DCh]
-    SetUChar(0x70B6C2, 0x8B);
-    Nop(0x70B71A, 1);								// mov ds:[0C403DCh], ebx
+    
+    plugin::patch::RedirectJump(0x707391, patch_707391);
+    plugin::patch::Nop(0x7073AA, 1);								// mov eax, esi
+    plugin::patch::SetUChar(0x7073AB, 0x8B);
+    plugin::patch::Nop(0x707439, 1);								// inc esi
+    plugin::patch::Nop(0x707441, 1);								// mov ds:[0C403DCh], esi
+    plugin::patch::Nop(0x70A9E0, 1);								// mov ecx, ds:[0C403DCh]
+    plugin::patch::SetUChar(0x70A9E1, 0x8B);
+    plugin::patch::Nop(0x70AA3F, 2);								// mov eax, ds:[0C403DCh]
+    plugin::patch::SetUChar(0x70AA41, 0xA1);
+    plugin::patch::Nop(0x70ADF9, 1);								// mov ecx, ds:[0C403DCh]
+    plugin::patch::SetUChar(0x70ADFA, 0x8B);
+    plugin::patch::Nop(0x70B6C1, 1);								// mov ecx, ds:[0C403DCh]
+    plugin::patch::SetUChar(0x70B6C2, 0x8B);
+    plugin::patch::Nop(0x70B71A, 1);								// mov ds:[0C403DCh], ebx
 }
 
 void PatchStaticShadows()
@@ -146,25 +146,29 @@ void PatchStaticShadows()
     AdjustPointer(0x400000+0x30BD7A, &aStaticShadows[0], 0xC4A030, 0xC4AC30);
     AdjustPointer(0x400000+0x30BD80, &aStaticShadows[0], 0xC4A030, 0xC4AC30);
     AdjustPointer(0x400000+0x30BD87, &aStaticShadows[0], 0xC4A030, 0xC4AC30);
+    
 
-    RedirectOffset(0x53CA26, patch_706ED0);
-    SetPointer(0x706E95, nullptr);
-    RedirectShortJump(0x706E99, 0x706EB5);
-    RedirectJump(0x70990A, patch_70990A);
-    Nop(0x70B736, 1);								// mov esi, [esp+3Ch]
-    SetUChar(0x70B737, 0x8B);
-    Nop(0x70BB20, 1);								// mov eax, edi
-    SetUChar(0x70BB21, 0x8B);
-    RedirectJump(0x70BB3C, patch_70BB3C);
-    Nop(0x70BB50, 1);								// mov ecx, edi
-    SetUChar(0x70BB51, 0x8B);
-    RedirectJump(0x70BB60, patch_70BB60);
-    RedirectJump(0x70BB67, patch_70BB67);
-    Nop(0x70BB7E, 1);								// mov esi, edi
-    SetUChar(0x70BB7F, 0x8B);
-    RedirectJump(0x70BC49, patch_70BC49);
-    Nop(0x70BC56, 1);								// mov ecx, edi
-    SetUChar(0x70BC57, 0x8B);
+
+    auto p = GetBranchDestination(0x53CA26);
+    MakeRelativeOffset(0x53CA26 + 1, patch_706ED0, 4);
+    //plugin::patch::RedirectOffset(0x53CA26, patch_706ED0); // TODO: OLA2 verify this
+    plugin::patch::SetPointer(0x706E95, nullptr);
+    plugin::patch::RedirectShortJump(0x706E99, 0x706EB5);
+    plugin::patch::RedirectJump(0x70990A, patch_70990A);
+    plugin::patch::Nop(0x70B736, 1);								// mov esi, [esp+3Ch]
+    plugin::patch::SetUChar(0x70B737, 0x8B);
+    plugin::patch::Nop(0x70BB20, 1);								// mov eax, edi
+    plugin::patch::SetUChar(0x70BB21, 0x8B);
+    plugin::patch::RedirectJump(0x70BB3C, patch_70BB3C);
+    plugin::patch::Nop(0x70BB50, 1);								// mov ecx, edi
+    plugin::patch::SetUChar(0x70BB51, 0x8B);
+    plugin::patch::RedirectJump(0x70BB60, patch_70BB60);
+    plugin::patch::RedirectJump(0x70BB67, patch_70BB67);
+    plugin::patch::Nop(0x70BB7E, 1);								// mov esi, edi
+    plugin::patch::SetUChar(0x70BB7F, 0x8B);
+    plugin::patch::RedirectJump(0x70BC49, patch_70BC49);
+    plugin::patch::Nop(0x70BC56, 1);								// mov ecx, edi
+    plugin::patch::SetUChar(0x70BC57, 0x8B);
 
 #ifdef SSHADS_LIFETIME
 #if !SSHADS_LIFETIME
@@ -243,9 +247,9 @@ void PatchPermanentShadows()
     AdjustPointer(0x400000+0x30CC90, &aPermanentShadows[0], 0xC4AC30, 0xC4B6B0);
     AdjustPointer(0x400000+0x30CCA0, &aPermanentShadows[0], 0xC4AC30, 0xC4B6E8, 56*48, aPermanentShadows.size());
 
-    RedirectJump(0x706FE2, patch_706FE2);
-    RedirectJump(0x7072C0, patch_7072C0);
-    SetUInt(0x70CC86, aPermanentShadows.size());
+    plugin::patch::RedirectJump(0x706FE2, patch_706FE2);
+    plugin::patch::RedirectJump(0x7072C0, patch_7072C0);
+    plugin::patch::SetUInt(0x70CC86, aPermanentShadows.size());
 }
 
 void __declspec(naked) patch_706ED0()
@@ -526,20 +530,20 @@ void PatchStaticShadowsVC()
         AdjustPointer(0x56C716, &aStaticShadows[0], 0x8615A0, 0x8621A0);
 
 
-    RedirectJump(0x56E6C0, patch_56E6C0);
-    RedirectJump(0x56967E, patch_56967E);
-    RedirectJump(0x56E924, patch_56E924);
-    RedirectJump(0x56E93B, patch_56E93B);
-    RedirectJump(0x56EB34, patch_56EB34);
-    RedirectJump(0x56EB43, patch_56EB43);
-    RedirectJump(0x56F09B, patch_56F09B);
-    RedirectJump(0x56F24A, patch_56F24A);
-    RedirectJump(0x56C71B, patch_56C71B);
-    RedirectJump(0x56C7BC, patch_56C7BC);
-    RedirectJump(0x56CBA8, patch_56CBA8);
+    plugin::patch::RedirectJump(0x56E6C0, patch_56E6C0);
+    plugin::patch::RedirectJump(0x56967E, patch_56967E);
+    plugin::patch::RedirectJump(0x56E924, patch_56E924);
+    plugin::patch::RedirectJump(0x56E93B, patch_56E93B);
+    plugin::patch::RedirectJump(0x56EB34, patch_56EB34);
+    plugin::patch::RedirectJump(0x56EB43, patch_56EB43);
+    plugin::patch::RedirectJump(0x56F09B, patch_56F09B);
+    plugin::patch::RedirectJump(0x56F24A, patch_56F24A);
+    plugin::patch::RedirectJump(0x56C71B, patch_56C71B);
+    plugin::patch::RedirectJump(0x56C7BC, patch_56C7BC);
+    plugin::patch::RedirectJump(0x56CBA8, patch_56CBA8);
 
 
-    RedirectJump(0x56CC10, patch_56CC10);
+    plugin::patch::RedirectJump(0x56CC10, patch_56CC10);
 }
 
 DWORD ext_56E6C8 = 0x56E6C8;
@@ -844,18 +848,18 @@ void PatchStaticShadowsIII()
         AdjustPointer(0x512D50, &aStaticShadows[0], 0x773BE8, 0x77430E);
         AdjustPointer(0x514666, &aStaticShadows[0], 0x773BE8, 0x77430E);
 
-    RedirectJump(0x513214, patch_513214);
-    RedirectJump(0x51322B, patch_51322B);
-    RedirectJump(0x51344C, patch_51344C);
-    RedirectJump(0x51345B, patch_51345B);
+    plugin::patch::RedirectJump(0x513214, patch_513214);
+    plugin::patch::RedirectJump(0x51322B, patch_51322B);
+    plugin::patch::RedirectJump(0x51344C, patch_51344C);
+    plugin::patch::RedirectJump(0x51345B, patch_51345B);
 
-    RedirectJump(0x51466B, patch_51466B);
-    RedirectJump(0x5146C9, patch_5146C9);
-    RedirectJump(0x5148C8, patch_5148C8);
-    RedirectJump(0x5148E1, patch_5148E1);
+    plugin::patch::RedirectJump(0x51466B, patch_51466B);
+    plugin::patch::RedirectJump(0x5146C9, patch_5146C9);
+    plugin::patch::RedirectJump(0x5148C8, patch_5148C8);
+    plugin::patch::RedirectJump(0x5148E1, patch_5148E1);
 
-    RedirectJump(0x512D58, patch_512D58);
-    RedirectJump(0x516C30, patch_516C30);
+    plugin::patch::RedirectJump(0x512D58, patch_512D58);
+    plugin::patch::RedirectJump(0x516C30, patch_516C30);
 }
 
 DWORD ext_51321A = 0x51321A;

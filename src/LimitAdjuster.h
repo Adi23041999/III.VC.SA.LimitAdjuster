@@ -10,7 +10,7 @@
  *
  */
 #pragma once
-#include <injector/injector.hpp>    // base injection library
+#include <injector.hpp>
 #include <string>                   // for std::string
 #include <vector>                   // for std::vector
 #include <stdexcept>
@@ -62,6 +62,7 @@ class Adjuster
 
 
         // Virtual Methods
+
 
         /*
          *  Here you should return an array of limits that can be adjusted by this Adjuster.

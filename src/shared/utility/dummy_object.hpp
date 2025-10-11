@@ -5,7 +5,7 @@
 */
 #pragma once
 #include <type_traits>
-#include <injector/injector.hpp>
+#include <injector.hpp>
 
 //
 // using snake_case to reflect std::aligned_storage

@@ -296,9 +296,9 @@ class CDynamicPool
         }
 
         // Returns the new size for a grow operation (see Grow())
-        int Growt(int requires)
+        int Growt(int required)
         {
-            if(this->m_Size < requires)
+            if(this->m_Size < required)
             {
                 // Normally the pool should grow by 50%
                 auto half = this->m_Size / 2;
@@ -306,7 +306,7 @@ class CDynamicPool
                                 this->m_Size + half);
 
                 // Make sure the grow was enought to have 'requires' size
-                return (size < requires? requires : size);
+                return (size < required? required : size);
             }
             return this->m_Size;
         }

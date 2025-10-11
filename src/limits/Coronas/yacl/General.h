@@ -1,5 +1,7 @@
 #include <math.h>
 #include <windows.h>
+#include "CVector.h"
+#include "CMatrix.h"
 #ifndef __GENERAL
 #define __GENERAL
 
@@ -22,148 +24,10 @@ struct CBaseModelInfo
 	int m_pRwObject;
 };
 
-struct RwV2D
-{
-	float x, y;
-};
-
-struct RwV3d
-{
-	float x, y, z;
-};
-
-struct RwMatrix
-{
-	RwV3d right;
-	DWORD flags;
-	RwV3d up;
-	DWORD _pad1;
-	RwV3d at;
-	DWORD _pad2;
-	RwV3d pos;
-	DWORD _pad3;
-};
-struct RwRGBA
-{
-	char r, g, b, a;
-};
-struct RwRGBAReal
-{
-	float red, green, blue, alpha;
-};
-struct RwObject
-{
-	char type, subType, flags, privateFlags;
-	struct RwFrame *parent;
-};
-struct RwLLLink
-{
-	void *next;
-	void *prev;
-};
-struct RwLinkList
-{
-	RwLLLink link;
-};
-struct RpClump
-{
-	RwObject object;
-	RwLinkList atomicList, lightList, cameraList;
-	RwLLLink inWorldList;
-	DWORD callback;
-};
-
-struct RwRaster
-{
-	void *parent;
-	char *cpPixels;
-	char *palette;
-	int width, height, depth, stride;
-	short u, v;
-	char cType, cFlags, privateFlags, cFormat;
-	char *originalPixels;
-	int originalWidth, originalHeight, originalStride;
-};
-
-
-struct RwTexDictionary
-{
-	RwObject object;
-	RwLinkList texturesInDict;
-	RwLLLink lInInstance;
-};
-
-struct RwTexture
-{
-	RwRaster *raster;
-	RwTexDictionary *dict;
-	RwLLLink lInDictionary;
-	char name[32];
-	char mask[32];
-	char filterAddressing;
-	char _pad[3];
-	int refCount;
-};
-
-struct RwObjectHasFrame
-{
-	RwObject object;
-	RwLLLink lFrame;
-	DWORD sync;
-};
-
-struct RwPlane
-{
-	RwV3d normal;
-	float distance;
-};
-
-struct RwFrustumPlane
-{
-	RwPlane plane;
-	char closestX, closestY, closestZ, _pad;
-};
-
-struct RwBBox
-{
-	RwV3d sup, inf;
-};
-
-struct RwCamera
-{
-	RwObjectHasFrame object;
-	DWORD projectionType, beginUpdate, endUpdate;
-	RwMatrix viewMatrix;
-	RwRaster *frameBuffer;
-	RwRaster *zBuffer;
-	RwV2D viewWindow, recipViewWindow, viewOffset;
-	float nearPlane, farPlane, fogPlane, zScale, zShift;
-	RwFrustumPlane frustrumPlanes[6];
-	RwBBox frustrumBoundBox;
-	RwV3d frustrumCorners[8];
-};
-
 struct CShadowImage
 {
 	RwCamera *camera;
 	RwTexture *texture;
-};
-
-struct RpLight
-{
-	RwObjectHasFrame object;
-	float radius;
-	RwRGBAReal color;
-	float minusCosAngle;
-	RwLinkList WorldSectorsInLight;
-	RwLLLink InWorld;
-	WORD lightFrame, _pad;
-};
-
-struct RwSphere
-{
-	RwV3d center;
-	float radius;
 };
 
 struct CShadowData
@@ -198,39 +62,6 @@ struct CRegisteredShadow
 
 
 
-class CVector
-{
-public:
-	float	x, y, z;
-
-	CVector()
-	{}
-
-	CVector(float fX, float fY, float fZ=0.0f)
-		: x(fX), y(fY), z(fZ)
-	{}
-
-	CVector(const RwV3d& rwVec)
-		: x(rwVec.x), y(rwVec.y), z(rwVec.z)
-	{}
-
-	CVector&		operator+=(const CVector& vec)
-			{ x += vec.x; y += vec.y; z += vec.z;
-			return *this; }
-
-	inline float	Magnitude()
-		{ return sqrt(x * x + y * y + z * z); }
-
-	friend inline float DotProduct(const CVector& vec1, const CVector& vec2)
-		{ return vec1.x * vec2.x + vec1.x * vec2.y + vec1.z * vec2.z; }
-
-	friend inline CVector operator*(const CVector& in, float fMul)
-		{ return CVector(in.x * fMul, in.y * fMul, in.z * fMul); }
-	friend inline CVector operator+(const CVector& vec1, const CVector& vec2)
-		{ return CVector(vec1.x + vec2.x, vec1.y + vec2.y, vec1.z + vec2.z); }
-	friend inline CVector operator-(const CVector& vec1, const CVector& vec2)
-		{ return CVector(vec1.x - vec2.x, vec1.y - vec2.y, vec1.z - vec2.z); }
-};
 
 class CVector2D
 {
@@ -243,79 +74,6 @@ public:
 	CVector2D(float fX, float fY)
 		: x(fX), y(fY)
 	{}
-};
-
-class CMatrix
-{
-public:
-	RwMatrix	matrix;
-	RwMatrix*	pMatrix;
-	BOOL		haveRwMatrix;
-
-public:
-	CMatrix()
-		: pMatrix(nullptr), haveRwMatrix(FALSE)
-	{}
-
-	CMatrix(RwMatrix* rwMatrix, bool bAttach=false)
-		: matrix(*rwMatrix), haveRwMatrix(bAttach), pMatrix(bAttach ? rwMatrix : nullptr)
-	{}
-
-	CMatrix(const CVector& vecRight, const CVector& vecUp, const CVector& vecAt, const CVector& vecPos)
-	{
-		matrix.right.x = vecRight.x;
-		matrix.right.y = vecRight.y;
-		matrix.right.z = vecRight.z;
-
-		matrix.up.x = vecUp.x;
-		matrix.up.y = vecUp.y;
-		matrix.up.z = vecUp.z;
-
-		matrix.at.x = vecAt.x;
-		matrix.at.y = vecAt.y;
-		matrix.at.z = vecAt.z;
-
-		matrix.pos.x = vecPos.x;
-		matrix.pos.y = vecPos.y;
-		matrix.pos.z = vecPos.z;
-	}
-
-	friend inline CMatrix operator*(const CMatrix& Rot1, const CMatrix& Rot2)
-		{ return CMatrix(	CVector(Rot1.matrix.right.x * Rot2.matrix.right.x + Rot1.matrix.right.y * Rot2.matrix.up.x + Rot1.matrix.right.z * Rot2.matrix.at.x + Rot2.matrix.pos.x,
-								Rot1.matrix.right.x * Rot2.matrix.right.y + Rot1.matrix.right.y * Rot2.matrix.up.y + Rot1.matrix.right.z * Rot2.matrix.at.y + Rot2.matrix.pos.y,
-								Rot1.matrix.right.x * Rot2.matrix.right.z + Rot1.matrix.right.y * Rot2.matrix.up.z + Rot1.matrix.right.z * Rot2.matrix.at.z + Rot2.matrix.pos.z),
-						CVector(Rot1.matrix.up.x * Rot2.matrix.right.x + Rot1.matrix.up.y * Rot2.matrix.up.x + Rot1.matrix.up.z * Rot2.matrix.at.x + Rot2.matrix.pos.x,
-								Rot1.matrix.up.x * Rot2.matrix.right.y + Rot1.matrix.up.y * Rot2.matrix.up.y + Rot1.matrix.up.z * Rot2.matrix.at.y + Rot2.matrix.pos.y,
-								Rot1.matrix.up.x * Rot2.matrix.right.z + Rot1.matrix.up.y * Rot2.matrix.up.z + Rot1.matrix.up.z * Rot2.matrix.at.z + Rot2.matrix.pos.z),
-						CVector(Rot1.matrix.at.x * Rot2.matrix.right.x + Rot1.matrix.at.y * Rot2.matrix.up.x + Rot1.matrix.at.z * Rot2.matrix.at.x + Rot2.matrix.pos.x,
-								Rot1.matrix.at.x * Rot2.matrix.right.y + Rot1.matrix.at.y * Rot2.matrix.up.y + Rot1.matrix.at.z * Rot2.matrix.at.y + Rot2.matrix.pos.y,
-								Rot1.matrix.at.x * Rot2.matrix.right.z + Rot1.matrix.at.y * Rot2.matrix.up.z + Rot1.matrix.at.z * Rot2.matrix.at.z + Rot2.matrix.pos.z),
-						CVector(Rot1.matrix.pos.x * Rot2.matrix.right.x + Rot1.matrix.pos.y * Rot2.matrix.up.x + Rot1.matrix.pos.z * Rot2.matrix.at.x + Rot2.matrix.pos.x,
-								Rot1.matrix.pos.x * Rot2.matrix.right.y + Rot1.matrix.pos.y * Rot2.matrix.up.y + Rot1.matrix.pos.z * Rot2.matrix.at.y + Rot2.matrix.pos.y,
-								Rot1.matrix.pos.x * Rot2.matrix.right.z + Rot1.matrix.pos.y * Rot2.matrix.up.z + Rot1.matrix.pos.z * Rot2.matrix.at.z + Rot2.matrix.pos.z)); };
-
-	friend inline CVector operator*(const CMatrix& matrix, const CVector& vec)
-			{ return CVector(matrix.matrix.up.x * vec.y + matrix.matrix.right.x * vec.x + matrix.matrix.at.x * vec.z + matrix.matrix.pos.x,
-								matrix.matrix.up.y * vec.y + matrix.matrix.right.y * vec.x + matrix.matrix.at.y * vec.z + matrix.matrix.pos.y,
-								matrix.matrix.up.z * vec.y + matrix.matrix.right.z * vec.x + matrix.matrix.at.z * vec.z + matrix.matrix.pos.z); };
-
-	inline CVector*	GetUp()
-		{ return reinterpret_cast<CVector*>(&matrix.up); }
-
-	inline CVector*	GetAt()
-		{ return reinterpret_cast<CVector*>(&matrix.at); }
-
-	inline CVector* GetPos()
-		{ return reinterpret_cast<CVector*>(&matrix.pos); }
-
-	inline void		SetTranslateOnly(float fX, float fY, float fZ)
-		{ matrix.pos.x = fX; matrix.pos.y = fY; matrix.pos.z = fZ; }
-
-	void			SetRotateXOnly(float fAngle);
-	void			SetRotateYOnly(float fAngle);
-	void			SetRotateZOnly(float fAngle);
-
-	void			SetRotateOnly(float fAngleX, float fAngleY, float fAngleZ);
 };
 
 class CSimpleTransform
@@ -380,14 +138,14 @@ public:
 	}
 
 	inline CVector*					GetCoords()
-		{ return m_pCoords ? reinterpret_cast<CVector*>(&m_pCoords->matrix.pos) : &m_transform.m_translate; }
+		{ return m_pCoords ? reinterpret_cast<CVector*>(&m_pCoords->pos) : &m_transform.m_translate; }
 	inline CMatrix*					GetMatrix()
 		{ return m_pCoords; }
 	inline CSimpleTransform&		GetTransform()
 		{ return m_transform; }
 
 	inline void						SetCoords(const CVector& pos)
-	{	if ( m_pCoords ) { m_pCoords->matrix.pos.x = pos.x; m_pCoords->matrix.pos.y = pos.y; m_pCoords->matrix.pos.z = pos.z; }
+	{	if ( m_pCoords ) { m_pCoords->pos.x = pos.x; m_pCoords->pos.y = pos.y; m_pCoords->pos.z = pos.z; }
 		else m_transform.m_translate = pos; }
 	inline void						SetHeading(float fHeading)
 		{ if ( m_pCoords ) m_pCoords->SetRotateZOnly(fHeading); else m_transform.m_heading = fHeading; }

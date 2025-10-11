@@ -7,8 +7,8 @@
 #include <windows.h>
 #include <LimitAdjuster.h>
 #include <ini_parser/ini_parser.hpp>
-#include <injector/utility.hpp>
-#include <injector/gvm/translator.hpp>
+#include <utility.hpp>
+#include <gvm/translator.hpp>
 
 // Stores an handler for a specific limit
 struct LimitHandler
@@ -435,20 +435,20 @@ void PatchDrawer()
 
 
 
-void* injector::address_manager::translator(void* p)
-{
-    // The following must be at the top
-    auto& t = address_translator_manager::singleton();
-
-    // Then we need a fallback that will return the original address if no address was found for it
-    struct fallbacker : injector::address_translator
-    {
-        virtual void* fallback(void* p) const
-        {
-            return p;
-        }
-    };
-    static fallbacker fb;
-
-    return t.translator(p);
-}
+//void* injector::address_manager::translator(void* p)
+//{
+//    // The following must be at the top
+//    auto& t = address_translator_manager::singleton();
+//
+//    // Then we need a fallback that will return the original address if no address was found for it
+//    struct fallbacker : injector::address_translator
+//    {
+//        virtual void* fallback(void* p) const
+//        {
+//            return p;
+//        }
+//    };
+//    static fallbacker fb;
+//
+//    return t.translator(p);
+//}

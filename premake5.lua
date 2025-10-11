@@ -1,35 +1,31 @@
---[[
-    OpenLA Build Script
-    Use 'premake5 --help' for help
---]]
+workspace "OpenLimitAdjuster"
+	configurations { "Release", "Debug", }
+	platforms { "GTA3", "GTAVC", "GTASA" }
+    location( "build" )
+	startproject "OpenLimitAdjuster"
+	files {
+		"src/**",
+        "doc/**",
+	}
 
+project "OpenLimitAdjuster"
+	kind "SharedLib"
+	language "C++"
+	targetextension ".asi"
+	characterset ("MBCS")
+	cppdialect "C++latest"
+	linkoptions "/SAFESEH:NO"
+	buildoptions { "-std:c++latest", "/permissive" }
+	defines { "_CRT_SECURE_NO_WARNINGS", "_CRT_NON_CONFORMING_SWPRINTFS", "_USE_MATH_DEFINES", "RW", "_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING" }
+	--disablewarnings { "4244", "4800", "4305", "4073", "4838", "4996", "4221", "4430", "26812", "26495", "6031" }
+    flags { "NoPCH" }
+    excludes { 
+		"sample.cpp",
+		"game_iii/CLinkList.h",
+		"game_vc/CLinkList.h",
+		"game_sa/CLinkList.h",
+	}
 
---[[
-    Options and Actions
---]]
-
-newoption {
-    trigger     = "outdir",
-    value       = "path",
-    description = "Output directory for the build files"
-}
-if not _OPTIONS["outdir"] then
-    _OPTIONS["outdir"] = "build"
-end
-
-
---[[
-    The Solution
---]]
-solution "OpenLA"
-
-    configurations { "Release", "Debug" }
-
-    location( _OPTIONS["outdir"] )
-    targetprefix "" -- no 'lib' prefix on gcc
-    targetdir "bin"
-    implibdir "bin"
-	
     defines { "rsc_CompanyName=\"LimitAdjuster\"" }
     defines { "rsc_LegalCopyright=\"MIT License\""} 
     defines { "rsc_FileVersion=\"1.0.0.0\"", "rsc_ProductVersion=\"1.0.0.0\"" }
@@ -37,8 +33,17 @@ solution "OpenLA"
     defines { "rsc_FileDescription=\"This is a open source limit adjuster for Grand Theft Auto III, Vice City and San Andreas\"" }
     defines { "rsc_UpdateUrl=\"https://github.com/ThirteenAG/III.VC.SA.LimitAdjuster\"" }
 
+    defines { "PLUGIN_SGV_10EN" }
+
+    includedirs {
+        "src/**.*",
+		"$(PLUGIN_SDK_DIR)/shared/",
+		"$(PLUGIN_SDK_DIR)/shared/game/",
+		"$(PLUGIN_SDK_DIR)/injector/",
+	}
+
     flags {
-        "StaticRuntime",
+        staticruntime "on",
         "NoImportLib",
         rtti ("Off"),
         "NoBufferSecurityCheck"
@@ -57,36 +62,94 @@ solution "OpenLA"
     includedirs {
         "src",
         "src/shared",
-        "src/shared/cpatch",
+        --"src/shared/cpatch",
         "src/shared/structs",
     }
 
-    configuration "Debug*"
-        flags { "Symbols" }
-        
-    configuration "Release*"
-        defines { "NDEBUG" }
-        optimize "Speed"
+	libdirs { "$(PLUGIN_SDK_DIR)/output/lib" }
 
-    configuration "vs*"
-        buildoptions { "/arch:IA32" }           -- disable the use of SSE/SSE2 instructions
+    largeaddressaware "on"
 
-    project "III.VC.SA.LimitAdjuster"
-        language "C++"
-        kind "SharedLib"
-        targetname "III.VC.SA.LimitAdjuster"
-        targetextension ".asi"
-        
-        flags { "NoPCH" }
-        
-        files {
-            "src/**.cpp",
-            "src/**.hpp",
-            "src/**.h",
-            "doc/**"
-        }
-        files { "src/resources/Versioninfo.rc" }
-        excludes { "sample.cpp" }
-        
-        
+	filter "configurations:Debug"
+		defines { "DEBUG" }
+		symbols "on"
 
+	filter "configurations:Release"
+		defines { "NDEBUG" }
+		symbols "on"
+		optimize "speed"
+		linktimeoptimization "on"
+		inlining "auto"
+		runtime "Release"
+
+	filter { "configurations:Debug", "platforms:GTA3" }
+		links { "plugin_iii_d" }
+
+	filter { "configurations:Release", "platforms:GTA3" }
+		links { "plugin_iii" }
+
+	filter { "configurations:Debug", "platforms:GTAVC" }
+		links { "plugin_vc_d" }
+
+	filter { "configurations:Release", "platforms:GTAVC" }
+		links { "plugin_vc" }
+
+	filter { "configurations:Debug", "platforms:GTASA" }
+		links { "plugin_sa_d" }
+
+	filter { "configurations:Release", "platforms:GTASA" }
+		links { "plugin_sa" }
+
+	filter { "platforms:GTA3" }
+		targetdir "output/bin/GTA3/"
+		objdir ("output/bin/GTA3/GTA3/")
+		targetname "III.OpenLimitAdjuster"
+		defines { "III", "GTA3" }
+		debugdir "$(GTA_III_DIR)"
+		debugcommand "$(GTA_III_DIR)/gta3.exe"
+		--debugcommand "D:/Projects/3D/GTA/Liberty City Countryside/GTA 3 UL/gta3 1.0.exe"
+		--debugdir "D:/Projects/3D/GTA/Liberty City Countryside/GTA 3 UL"
+		includedirs {
+			"$(PLUGIN_SDK_DIR)/plugin_III/",
+			"$(PLUGIN_SDK_DIR)/plugin_III/game_III/",
+			"$(PLUGIN_SDK_DIR)/plugin_III/game_III/rw",
+		}
+		postbuildcommands {
+		"copy /y \"$(TargetPath)\" \"$(GTA_III_DIR)\\scripts\\III.OpenLimitAdjuster.asi\"",
+		"copy /y \"$(TargetPath)\" \"D:\\Projects\\3D\\GTA\\Liberty City Countryside\\GTA 3 UL\\III.OpenLimitAdjuster.asi\"",
+		}
+
+	filter { "platforms:GTAVC" }
+		targetdir "output/bin/GTAVC/"
+		objdir ("output/bin/GTAVC/GTAVC/")
+		targetname "VC.OpenLimitAdjuster"
+		defines { "VC", "GTAVC" }
+		debugdir "$(GTA_VC_DIR)"
+		debugcommand "$(GTA_VC_DIR)/gtaVC.exe"
+		includedirs {
+        	"$(PLUGIN_SDK_DIR)/plugin_VC/",
+			"$(PLUGIN_SDK_DIR)/plugin_VC/game_VC/",
+			"$(PLUGIN_SDK_DIR)/plugin_VC/game_VC/rw",
+		}
+		postbuildcommands {
+		"copy /y \"$(TargetPath)\" \"$(GTA_VC_DIR)\\scripts\\VC.OpenLimitAdjuster.asi\"",
+		}
+
+	filter { "platforms:GTASA" }
+		targetdir "output/bin/GTASA/"
+		objdir ("output/bin/GTASA/GTASA/")
+		targetname "SA.OpenLimitAdjuster"
+		defines { "DEBUG", "SA", "GTASA" }
+		debugdir "$(GTA_SA_DIR)"
+		debugcommand "$(GTA_SA_DIR)/gtasa.exe"
+		includedirs {
+        	"$(PLUGIN_SDK_DIR)/plugin_SA/",
+			"$(PLUGIN_SDK_DIR)/plugin_SA/game_SA/",
+			"$(PLUGIN_SDK_DIR)/plugin_SA/game_SA/rw",
+		}
+		postbuildcommands {
+		"copy /y \"$(TargetPath)\" \"$(GTA_SA_DIR)\\scripts\\SA.OpenLimitAdjuster.asi\"",
+		}	
+    
+--    configuration "vs*"
+--        buildoptions { "/arch:IA32" }           -- disable the use of SSE/SSE2 instructions

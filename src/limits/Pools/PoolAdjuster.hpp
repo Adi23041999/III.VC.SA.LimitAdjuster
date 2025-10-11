@@ -6,7 +6,7 @@
 #pragma once
 #include <LimitAdjuster.h>
 #include <CPool.h>
-#include <injector/utility.hpp>
+#include <utility.hpp>
 
 struct PoolAdjusterBase
 {

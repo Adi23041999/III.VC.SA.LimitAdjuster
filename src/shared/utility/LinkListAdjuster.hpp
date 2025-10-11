@@ -5,7 +5,7 @@
 */
 #pragma once
 #include "LimitAdjuster.h"
-#include "structs/CLinkList.h"
+#include "CLinkList.h"
 #include <memory>
 
 /*

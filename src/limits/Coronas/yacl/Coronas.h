@@ -1,6 +1,5 @@
 #ifndef __CORONAS
 #define __CORONAS
-#include <vector>
 #include <map>
 #include "General.h"
 
