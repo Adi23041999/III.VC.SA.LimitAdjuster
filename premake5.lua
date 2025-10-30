@@ -95,10 +95,10 @@ project "OpenLimitAdjuster"
 		links { "plugin_vc" }
 
 	filter { "configurations:Debug", "platforms:GTASA" }
-		links { "plugin_sa_d" }
+		links { "plugin_d" }
 
 	filter { "configurations:Release", "platforms:GTASA" }
-		links { "plugin_sa" }
+		links { "plugin" }
 
 	filter { "platforms:GTA3" }
 		targetdir "output/bin/GTA3/"

@@ -31,6 +31,7 @@ public:
     static void TheZones_Init();
     static void TheZones_SaveAllZones(uint8_t* buffer, uint32_t* size);
     static void TheZones_LoadAllZones(uint8_t* buffer);
+    static void AddZoneToAudioZoneArray(class CZone* zone);
 } GameZones;
 
 #define POLICE_RADIO_QUEUE_MAX_SAMPLES 60

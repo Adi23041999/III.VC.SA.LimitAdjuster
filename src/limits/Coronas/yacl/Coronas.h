@@ -1,7 +1,8 @@
-#ifndef __CORONAS
-#define __CORONAS
+#pragma once
+#if GTASA
 #include <map>
 #include "General.h"
+#include "CEntity.h"
 
 //#define NUM_CORONAS		20000
 
@@ -103,4 +104,4 @@ extern RwTexture** const	gpCoronaTexture;
 
 static_assert(sizeof(CRegisteredCorona) == 0x3C, "CRegisteredCorona has wrong size!");
 
-#endif
+#endif // GTASA

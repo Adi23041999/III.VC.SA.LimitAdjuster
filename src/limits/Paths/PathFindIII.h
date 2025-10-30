@@ -4,11 +4,13 @@
 
 #pragma once
 
+#ifdef GTA3
 #include "stdint.h"
 #include "CVector.h"
 #include "CVector2D.h"
 #include "CMatrix.h"
-#include "Types/General.h"
+#include "CBuilding.h"
+#include "OLACommon.h"
 
 // Defaults
 //{
@@ -36,8 +38,13 @@ enum
 	NUMDETACHED_PEDS = 50,
 };
 
-struct CTreadable;
-struct CPhysical;
+class CTreadableRe : public CBuilding
+{
+public:
+	int16_t m_nodeIndices[2][12];	// first car, then ped
+};
+
+class CPhysical;
 
 enum
 {
@@ -46,12 +53,6 @@ enum
 
 	UseInRoadBlock = 1,
 	ObjectEastWest = 2,
-};
-
-enum
-{
-	PATH_CAR = 0,
-	PATH_PED = 1,
 };
 
 enum
@@ -66,21 +67,21 @@ enum
 	ROUTE_NO_BLOCKADE = 1
 };
 
-struct CPedPathNode
+struct CPedPathNodeRe
 {
 	bool bBlockade;
 	uint8 nodeIdX;
 	uint8 nodeIdY;
 	int16 id;
-	CPedPathNode* prev;
-	CPedPathNode* next;
+	CPedPathNodeRe* prev;
+	CPedPathNodeRe* next;
 };
 
-struct CPathNode
+struct CPathNodeRe
 {
 	CVector pos;
-	CPathNode* prev;
-	CPathNode* next;
+	CPathNodeRe* prev;
+	CPathNodeRe* next;
 	int16 distance;		// in path search
 	int16 objectIndex;
 	int16 firstLink;
@@ -99,13 +100,13 @@ struct CPathNode
 	float GetY(void) { return pos.y; }
 	float GetZ(void) { return pos.z; }
 
-	CPathNode* GetPrev(void) { return prev; }
-	CPathNode* GetNext(void) { return next; }
-	void SetPrev(CPathNode* node) { prev = node; }
-	void SetNext(CPathNode* node) { next = node; }
+	CPathNodeRe* GetPrev(void) { return prev; }
+	CPathNodeRe* GetNext(void) { return next; }
+	void SetPrev(CPathNodeRe* node) { prev = node; }
+	void SetNext(CPathNodeRe* node) { next = node; }
 };
 
-union CConnectionFlags
+union CConnectionFlagsRe
 {
 	uint8 flags;
 	struct {
@@ -125,7 +126,7 @@ enum
 	FLAG_CROSSES_ROAD = 1 << 0,
 };
 
-struct CCarPathLink
+struct CCarPathLinkRe
 {
 	CVector2D pos;
 	CVector2D dir;
@@ -156,7 +157,7 @@ struct CCarPathLink
 };
 
 // This is what we're reading from the files, only temporary
-struct CPathInfoForObject
+struct CPathInfoForObjectRe
 {
 	int16 x;
 	int16 y;
@@ -167,10 +168,10 @@ struct CPathInfoForObject
 	int8 numRightLanes;
 	uint8 flags;
 };
-extern CPathInfoForObject* InfoForTileCars;
-extern CPathInfoForObject* InfoForTilePeds;
+extern CPathInfoForObjectRe* NewInfoForTileCars;
+extern CPathInfoForObjectRe* NewInfoForTilePeds;
 
-struct CTempNode
+struct CTempNodeRe
 {
 	CVector pos;
 	float dirX;
@@ -183,21 +184,21 @@ struct CTempNode
 	uint8 blockOneWayRoadSwitch : 1;
 };
 
-struct CTempDetachedNode	// unused
+struct CTempDetachedNodeRe	// unused
 {
 	uint8 foo[20];
 };
 
-class CPathFind
+class CPathFindRe
 {
 public:
-	CPathNode m_pathNodes[NUM_PATHNODES];
-	CCarPathLink m_carPathLinks[NUM_CARPATHLINKS];
-	CTreadable* m_mapObjects[NUM_MAPOBJECTS];
+	CPathNodeRe m_pathNodes[NUM_PATHNODES];
+	CCarPathLinkRe m_carPathLinks[NUM_CARPATHLINKS];
+	CTreadableRe* m_mapObjects[NUM_MAPOBJECTS];
 	uint8 m_objectFlags[NUM_MAPOBJECTS];
 	int16 m_connections[NUM_PATHCONNECTIONS];
 	int16 m_distances[NUM_PATHCONNECTIONS];
-	CConnectionFlags m_connectionFlags[NUM_PATHCONNECTIONS];
+	CConnectionFlagsRe m_connectionFlags[NUM_PATHCONNECTIONS];
 	int16 m_carPathConnections[NUM_PATHCONNECTIONS];
 
 	int32 m_numPathNodes;
@@ -208,28 +209,28 @@ public:
 	int32 m_numCarPathLinks;
 	int32 unk;
 	uint8 m_numGroups[2];
-	CPathNode m_searchNodes[512];
+	CPathNodeRe m_searchNodes[512];
 
 	void Init(void);
 	void AllocatePathFindInfoMem(int16 numPathGroups);
-	void RegisterMapObject(CTreadable* mapObject);
+	void RegisterMapObject(CTreadableRe* mapObject);
 	void StoreNodeInfoPed(int16 id, int16 node, int8 type, int8 next, int16 x, int16 y, int16 z, int16 width, bool crossing);
 	void StoreNodeInfoCar(int16 id, int16 node, int8 type, int8 next, int16 x, int16 y, int16 z, int16 width, int8 numLeft, int8 numRight, uint8 flags);
 	void CalcNodeCoors(int16 x, int16 y, int16 z, int32 id, CVector* out);
 	bool LoadPathFindData(void);
 	void PreparePathData(void);
 	void CountFloodFillGroups(uint8 type);
-	void PreparePathDataForType(uint8 type, CTempNode* tempnodes, CPathInfoForObject* objectpathinfo,
-		float maxdist, CTempDetachedNode* detachednodes, int32 numDetached);
+	void PreparePathDataForType(uint8 type, CTempNodeRe* tempnodes, CPathInfoForObjectRe* objectpathinfo,
+		float maxdist, CTempDetachedNodeRe* detachednodes, int32 numDetached);
 
-	bool IsPathObject(int id) { return id < PATHNODESIZE && (InfoForTileCars[id * 12].type != 0 || InfoForTilePeds[id * 12].type != 0); }
+	bool IsPathObject(int id) { return id < PATHNODESIZE && (NewInfoForTileCars[id * 12].type != 0 || NewInfoForTilePeds[id * 12].type != 0); }
 
 	float CalcRoadDensity(float x, float y);
-	bool TestForPedTrafficLight(CPathNode* n1, CPathNode* n2);
-	bool TestCrossesRoad(CPathNode* n1, CPathNode* n2);
-	void AddNodeToList(CPathNode* node, int32 listId);
-	void RemoveNodeFromList(CPathNode* node);
-	void RemoveBadStartNode(CVector pos, CPathNode** nodes, int16* n);
+	bool TestForPedTrafficLight(CPathNodeRe* n1, CPathNodeRe* n2);
+	bool TestCrossesRoad(CPathNodeRe* n1, CPathNodeRe* n2);
+	void AddNodeToList(CPathNodeRe* node, int32 listId);
+	void RemoveNodeFromList(CPathNodeRe* node);
+	void RemoveBadStartNode(CVector pos, CPathNodeRe** nodes, int16* n);
 	void SetLinksBridgeLights(float, float, float, float, bool);
 	void SwitchOffNodeAndNeighbours(int32 nodeId, bool disable);
 	void SwitchRoadsOffInArea(float x1, float x2, float y1, float y2, float z1, float z2, bool disable);
@@ -244,9 +245,9 @@ public:
 	float FindNodeOrientationForCarPlacementFacingDestination(int32 nodeId, float x, float y, bool towards);
 	bool NewGenerateCarCreationCoors(float x, float y, float dirX, float dirY, float spawnDist, float angleLimit, bool forward, CVector* pPosition, int32* pNode1, int32* pNode2, float* pPositionBetweenNodes, bool ignoreDisabled = false);
 	bool GeneratePedCreationCoors(float x, float y, float minDist, float maxDist, float minDistOffScreen, float maxDistOffScreen, CVector* pPosition, int32* pNode1, int32* pNode2, float* pPositionBetweenNodes, CMatrix* camMatrix);
-	CTreadable* FindRoadObjectClosestToCoors(CVector coors, uint8 type);
-	void FindNextNodeWandering(uint8, CVector, CPathNode**, CPathNode**, uint8, uint8*);
-	void DoPathSearch(uint8 type, CVector start, int32 startNodeId, CVector target, CPathNode** nodes, int16* numNodes, int16 maxNumNodes, CPhysical* vehicle, float* dist, float distLimit, int32 forcedTargetNode);
+	CTreadableRe* FindRoadObjectClosestToCoors(CVector coors, uint8 type);
+	void FindNextNodeWandering(uint8, CVector, CPathNodeRe**, CPathNodeRe**, uint8, uint8*);
+	void DoPathSearch(uint8 type, CVector start, int32 startNodeId, CVector target, CPathNodeRe** nodes, int16* numNodes, int16 maxNumNodes, CPhysical* vehicle, float* dist, float distLimit, int32 forcedTargetNode);
 	bool TestCoorsCloseness(CVector target, uint8 type, CVector start);
 	void Save(uint8* buf, uint32* size);
 	void Load(uint8* buf, uint32 size);
@@ -258,8 +259,10 @@ public:
 	//void DisplayPathData(void);
 };
 
-extern CPathFind ThePaths;
+extern CPathFindRe TheNewPaths;
 
 //extern bool gbShowPedPaths;
 //extern bool gbShowCarPaths;
 //extern bool gbShowCarPathsLinks;
+
+#endif // GTA3

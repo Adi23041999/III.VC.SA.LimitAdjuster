@@ -58,3 +58,21 @@ NormalizeXY(float& x, float& y)
 	else
 		x = 1.0f;
 }
+
+namespace OLA
+{
+	// paths don't generate vehicles correctly with the broken random number generator
+	#define MYRAND_MAX		65535
+	extern unsigned long long myrand_seed;
+	int myrand(void);
+
+	static uint16 GetRandomNumber()
+	{
+		return myrand() & MYRAND_MAX;
+	}
+
+	static bool GetRandomTrueFalse(void)
+	{
+		return GetRandomNumber() < MYRAND_MAX / 2;
+	}
+}

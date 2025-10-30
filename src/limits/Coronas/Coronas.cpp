@@ -8,10 +8,12 @@
 #include <vector>
 #include <map>
 #include <math.h>
+#ifdef GTASA
 #include "yacl/General.h"
 #include "yacl/Coronas.h"
-#include "yacl/Camera.h"
+#endif
 #include "Patch.h"
+#include "CCamera.h"
 
 #define Max(a,b) ((a) > (b) ? (a) : (b))
 #define Min(a,b) ((a) < (b) ? (a) : (b))
@@ -21,6 +23,7 @@ int NUM_CORONAS;
 #define WRAPPER __declspec(naked)
 #define EAXJMP(a) { _asm mov eax, a _asm jmp eax }
 
+#ifdef GTASA
 std::map<unsigned int, CCoronasLinkedListNode*>	CCoronas::UsedMap;
 CCoronasLinkedListNode							CCoronas::FreeList, CCoronas::UsedList;
 std::vector<CCoronasLinkedListNode>				CCoronas::aLinkedList;
@@ -30,9 +33,9 @@ float&											CCoronas::ScreenMult = *(float*)0x8D4B5C;
 
 WRAPPER void CRegisteredCorona::Update() { EAXJMP(0x6FABF0); }
 WRAPPER void CEntity::RegisterReference(CEntity** pAddress) { (pAddress); EAXJMP(0x571B70); }
-WRAPPER int CCamera::GetLookDirection() { EAXJMP(0x50AE90); }
+//WRAPPER int CCamera::GetLookDirection() { EAXJMP(0x50AE90); }
 
-CCamera&     TheCamera = *(CCamera*)0xB6F028;
+//CCamera&     TheCamera = *(CCamera*)0xB6F028;
 
 void CCoronas::RegisterCorona(unsigned int nID, CEntity* pAttachTo, unsigned char R, unsigned char G, unsigned char B, unsigned char A, const CVector& Position, float Size, float Range, RwTexture* pTex, unsigned char flareType, unsigned char reflectionType, unsigned char LOSCheck, unsigned char unused, float normalAngle, bool bNeonFade, float PullTowardsCam, bool bFadeIntensity, float FadeSpeed, bool bOnlyFromBelow, bool bWhiteCore)
 {
@@ -47,7 +50,7 @@ void CCoronas::RegisterCorona(unsigned int nID, CEntity* pAttachTo, unsigned cha
     else
         vecPosToCheck = Position;
 
-    CVector*	pCamPos = TheCamera.GetCoords();
+    CVector*	pCamPos = &TheCamera.GetPosition();
     if (Range * Range >= (pCamPos->x - vecPosToCheck.x)*(pCamPos->x - vecPosToCheck.x) + (pCamPos->y - vecPosToCheck.y)*(pCamPos->y - vecPosToCheck.y))
     {
         if (bNeonFade)
@@ -144,13 +147,13 @@ void CCoronas::Update()
     static unsigned int		nSomeHackyMask = 0;
     unsigned int			nThisHackyMask = 0;
 
-    if (TheCamera.Cams[TheCamera.ActiveCam].LookingLeft)
+    if (TheCamera.m_aCams[TheCamera.m_nActiveCam].m_bLookingLeft)
         nThisHackyMask |= 1;
 
-    if (TheCamera.Cams[TheCamera.ActiveCam].LookingRight)
+    if (TheCamera.m_aCams[TheCamera.m_nActiveCam].m_bLookingRight)
         nThisHackyMask |= 2;
 
-    if (TheCamera.Cams[TheCamera.ActiveCam].LookingBehind)
+    if (TheCamera.m_aCams[TheCamera.m_nActiveCam].m_bLookingBehind)
         nThisHackyMask |= 4;
 
     if (TheCamera.GetLookDirection())
@@ -189,7 +192,8 @@ void CCoronas::Update()
 
 void CCoronas::UpdateCoronaCoors(unsigned int nID, const CVector& vecPosition, float fMaxDist, float fNormalAngle)
 {
-    CVector*	pCamPos = TheCamera.GetCoords();
+    CVector* pCamPos = &TheCamera.GetPosition();
+    
     if (fMaxDist * fMaxDist >= (pCamPos->x - vecPosition.x)*(pCamPos->x - vecPosition.x) + (pCamPos->y - vecPosition.y)*(pCamPos->y - vecPosition.y))
     {
         auto	it = UsedMap.find(nID);
@@ -241,7 +245,6 @@ void CCoronas::Inject()
     plugin::patch::RedirectCall(0x53C13B, CCoronas::Update);
 }
 
-#ifdef GTASA
 class CoronasSA : public SimpleAdjuster
 {
 public:

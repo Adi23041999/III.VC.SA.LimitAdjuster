@@ -10,7 +10,7 @@
 #include "CTheZones.h"
 #include "cMusicManager.h"
 #include "eCrimeType.h"
-#include "shared/utility/SaveBuf.h"
+#include "helpers/SaveBuf.h"
 
 using namespace injector;
 
@@ -19,10 +19,10 @@ using namespace injector;
 bool bPatchAudioZones = false;
 bool bPatchZones = false;
 bool bPatchMapZones = false;
-uint16_t numAudioZones = 36;
-uint16_t numZones = 50;
-uint16_t numZonesInfos = numZones * 2;
-uint16_t numMapZones = 25;
+uint16_t NumAudioZones = 36;
+uint16_t NumZones = 50;
+uint16_t NumZonesInfos = NumZones * 2;
+uint16_t NumMapZones = 25;
 
 std::vector<short> AudioZoneArray;
 std::vector<tPoliceRadioZone> ZoneSfx;
@@ -62,14 +62,26 @@ static CZone* GetPointerForMapZoneIndex(ptrdiff_t i) { return i == -1 ? nullptr 
 static ptrdiff_t GetIndexForMapZonePointerOgFixed(CZone* zone) { return zone == nullptr ? -1 : zone - ogMapZoneArray; }
 static CZone* GetPointerForMapZoneIndexOgFixed(ptrdiff_t i) { return i == -1 ? nullptr : &ogMapZoneArray[i]; }
 
-static uint16_t FindAudioZone(CVector* pos)
-{
-    return plugin::CallAndReturnDynGlobal<uint16_t, CVector*>(0x4B83E0, pos);
-}
 static CZone* GetAudioZone(uint16_t i)
 {
-    CZone* usedZoneArray = bPatchZones ? &ZoneArray[0] : ogZoneArray;
-    return &usedZoneArray[AudioZoneArray[i]];
+    return &ZoneArray[AudioZoneArray[i]];
+}
+
+static bool PointLiesWithinZone(const CVector* v, CZone* zone)
+{
+    return zone->m_vecMin.x <= v->x && v->x <= zone->m_vecMax.x &&
+        zone->m_vecMin.y <= v->y && v->y <= zone->m_vecMax.y &&
+        zone->m_vecMin.z <= v->z && v->z <= zone->m_vecMax.z;
+}
+
+static uint16_t FindAudioZone(CVector* pos)
+{
+    int i;
+
+    for (i = 0; i < NumAudioZones; i++)
+        if (PointLiesWithinZone(pos, GetAudioZone(i)))
+            return i;
+    return -1;
 }
 
 static void SETZONESFX(int i, const char* name, uint32_t sample)
@@ -78,20 +90,29 @@ static void SETZONESFX(int i, const char* name, uint32_t sample)
     ZoneSfx[i].m_nSampleIndex = sample;
 };
 
+static bool8 PoliceRadioQueue_Add(cPoliceRadioQueue& queue, uint32_t sample)
+{
+    if (queue.m_nSamplesInQueue != POLICE_RADIO_QUEUE_MAX_SAMPLES) {
+        queue.m_aSamples[queue.m_nAddOffset] = sample;
+        queue.m_nSamplesInQueue++;
+        queue.m_nAddOffset = (queue.m_nAddOffset + 1) % POLICE_RADIO_QUEUE_MAX_SAMPLES;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+// -- patches
+
 const Adjuster::Limit* GameZones::GetLimits()
 {
-    if (GetGVM().IsIII())
+    static Limit limits[] =
     {
-        static Limit limits[] =
-        {
-            DEFINE_LIMIT(AudioZones),
-            DEFINE_LIMIT(Zones),
-            DEFINE_LIMIT(MapZones),
-            FINISH_LIMITS()
-        };
-        return limits;
-    }
-    return nullptr;
+        DEFINE_LIMIT(AudioZones),
+        DEFINE_LIMIT(Zones),
+        DEFINE_LIMIT(MapZones),
+        FINISH_LIMITS()
+    };
+    return limits;
 }
 
 void GameZones::ChangeLimit(int id, const std::string& value)
@@ -100,20 +121,20 @@ void GameZones::ChangeLimit(int id, const std::string& value)
     {
     case AudioZones:
         bPatchAudioZones = true;
-        numAudioZones = std::stoi(value);
+        NumAudioZones = std::stoi(value);
         PatchAudioZones();
         PatchZoneSfx();
         break;
     case Zones:
         bPatchZones = true;
-        numZones = std::stoi(value);
-        numZonesInfos = numZones * 2;
+        NumZones = std::stoi(value);
+        NumZonesInfos = NumZones * 2;
         PatchZoneArray();
         PatchZoneInfoArray();
         break;
     case MapZones:
         bPatchMapZones = true;
-        numMapZones = std::stoi(value);
+        NumMapZones = std::stoi(value);
         PatchMapZoneArray();
         break;
     }
@@ -129,9 +150,12 @@ void GameZones::Process()
 
         if (bPatchAudioZones)
         {
+			WriteMemory(0x57EB59, &ZoneSfx[0], true); // just so others can access the patched array
             MakeJMP(0x57EAC0, cAudioManagerEx::InitialisePoliceRadioZones);
             MakeJMP(0x57F5B0, &cAudioManagerEx::SetupCrimeReport);
             MakeJMP(0x580500, &cAudioManagerEx::PlaySuspectLastSeen);
+            MakeJMP(0x4B83E0, FindAudioZone);
+            MakeJMP(0x4B8340, AddZoneToAudioZoneArray);
         }
 
         if (!bPatchMapZones)
@@ -147,22 +171,9 @@ void GameZones::Process()
     }
 }
 
-static bool8 PoliceRadioQueue_Add(cPoliceRadioQueue& queue, uint32_t sample)
-{
-    if (queue.m_nSamplesInQueue != POLICE_RADIO_QUEUE_MAX_SAMPLES) {
-        queue.m_aSamples[queue.m_nAddOffset] = sample;
-        queue.m_nSamplesInQueue++;
-        queue.m_nAddOffset = (queue.m_nAddOffset + 1) % POLICE_RADIO_QUEUE_MAX_SAMPLES;
-        return TRUE;
-    }
-    return FALSE;
-}
-
-// -- patches
-
 void GameZones::PatchAudioZones()
 {
-    AudioZoneArray.resize(numAudioZones);
+    AudioZoneArray.resize(NumAudioZones);
 
     WriteMemory(0x4B8377, &AudioZoneArray[0], true);
     WriteMemory(0x4B83F9, &AudioZoneArray[0], true);
@@ -172,14 +183,7 @@ void GameZones::PatchAudioZones()
 
 void GameZones::PatchZoneSfx()
 {
-    ZoneSfx.resize(numAudioZones);
-
-    WriteMemory(0x57F687, &ZoneSfx[0].m_aName[4], true);
-    WriteMemory(0x57F68F, &ZoneSfx[0].m_aName, true);
-    WriteMemory(0x57F69D, &ZoneSfx[0].m_nSampleIndex, true);
-    WriteMemory(0x58059C, &ZoneSfx[0].m_aName[4], true);
-    WriteMemory(0x5805A4, &ZoneSfx[0].m_aName, true);
-    WriteMemory(0x5805B2, &ZoneSfx[0].m_nSampleIndex, true);
+    ZoneSfx.resize(NumAudioZones);
 
     //// ul test
     //tPoliceRadioZone* sfx = (tPoliceRadioZone*)ZoneSfx.data();
@@ -190,7 +194,7 @@ void GameZones::PatchZoneSfx()
 
 void GameZones::PatchZoneArray()
 {
-    ZoneArray.resize(numZones);
+    ZoneArray.resize(NumZones);
 
     WriteMemory(0x4B62DE, &ZoneArray[0], true);
     WriteMemory(0x4B6301, &ZoneArray[0].m_eZoneType, true);
@@ -228,7 +232,7 @@ void GameZones::PatchZoneArray()
 
 void GameZones::PatchZoneInfoArray()
 {
-    ZoneInfoArray.resize(numZonesInfos);
+    ZoneInfoArray.resize(NumZonesInfos);
 
     WriteMemory(0x4B6A2E, &ZoneInfoArray[0], true);
     WriteMemory(0x4B6A3B, &ZoneInfoArray[0], true);
@@ -242,7 +246,7 @@ void GameZones::PatchZoneInfoArray()
 
 void GameZones::PatchMapZoneArray()
 {
-    MapZoneArray.resize(numMapZones);
+    MapZoneArray.resize(NumMapZones);
 
     WriteMemory(0x4B6445, &MapZoneArray[0], true);
     WriteMemory(0x4B646C, &MapZoneArray[0].m_eZoneType, true);
@@ -265,18 +269,18 @@ void GameZones::TheZones_Init()
 
     if (bPatchAudioZones)
     {
-        for (size_t i = 0; i < numAudioZones; i++)
+        for (size_t i = 0; i < NumAudioZones; i++)
             AudioZoneArray[i] = -1;
     }
 
     if (bPatchZones)
     {
-        for (size_t i = 0; i < numZones; i++)
+        for (size_t i = 0; i < NumZones; i++)
             memset(&ZoneArray[i], 0, sizeof(CZone));
 
         CZoneInfo* zonei;
         int x = 1000 / 6;
-        for (size_t i = 0; i < numZonesInfos; i++) {
+        for (size_t i = 0; i < NumZonesInfos; i++) {
             zonei = &ZoneInfoArray[i];
             zonei->carDensity = 10;
             zonei->carPoorfamily = x;
@@ -325,7 +329,7 @@ void GameZones::TheZones_Init()
 
     if (bPatchMapZones)
     {
-        for (size_t i = 0; i < numMapZones; i++) {
+        for (size_t i = 0; i < NumMapZones; i++) {
             memset(&MapZoneArray[i], 0, sizeof(CZone));
             MapZoneArray[i].m_eZoneType = ZONE_MAPZONE;
         }
@@ -364,15 +368,15 @@ void GameZones::TheZones_SaveAllZones(uint8_t* buffer, uint32_t* size)
     CZone* savedMapZoneArray = bPatchMapZones ? &MapZoneArray[0] : ogMapZoneArray;
 
     *size +=
-          (sizeof(short) * numAudioZones) 
-        + (sizeof(CZone) * numZones)
-        + (sizeof(CZoneInfo) * numZonesInfos)
-        + (sizeof(CZone) * numMapZones);
+          (sizeof(short) * NumAudioZones) 
+        + (sizeof(CZone) * NumZones)
+        + (sizeof(CZoneInfo) * NumZonesInfos)
+        + (sizeof(CZone) * NumMapZones);
 
-    for (size_t i = 0; i < numAudioZones; i++)
+    for (size_t i = 0; i < NumAudioZones; i++)
         WriteSaveBuf(buffer, savedAudioZoneArray[i]);
 
-    for (size_t i = 0; i < numZones; ++i)
+    for (size_t i = 0; i < NumZones; ++i)
     {
         CZone* zone = WriteSaveBuf(buffer, savedZoneArray[i]);
         zone->m_pChild = (CZone*)GetIndexForZonePointer(savedZoneArray[i].m_pChild);
@@ -380,10 +384,10 @@ void GameZones::TheZones_SaveAllZones(uint8_t* buffer, uint32_t* size)
         zone->m_pNext = (CZone*)GetIndexForZonePointer(savedZoneArray[i].m_pNext);
     }
 
-    for (size_t i = 0; i < numZonesInfos; i++)
+    for (size_t i = 0; i < NumZonesInfos; i++)
         WriteSaveBuf(buffer, savedZoneInfoArray[i]);
 
-    for (size_t i = 0; i < numMapZones; ++i)
+    for (size_t i = 0; i < NumMapZones; ++i)
     {
         CZone* zone = WriteSaveBuf(buffer, savedMapZoneArray[i]);
         zone->m_pChild = (CZone*)GetIndexForMapZonePointer(savedMapZoneArray[i].m_pChild);
@@ -411,20 +415,20 @@ void GameZones::TheZones_LoadAllZones(uint8_t* buffer)
     CZone* loadedMapZoneArray = bPatchMapZones ? &MapZoneArray[0] : ogMapZoneArray;
 
     if (bPatchAudioZones)
-        assert(AudioZoneArray.size() == numAudioZones);
+        assert(AudioZoneArray.size() == NumAudioZones);
     if (bPatchZones) {
-        assert(ZoneArray.size() == numZones);
-        assert(ZoneInfoArray.size() == numZonesInfos);
+        assert(ZoneArray.size() == NumZones);
+        assert(ZoneInfoArray.size() == NumZonesInfos);
     }
     if (bPatchMapZones)
-        assert(MapZoneArray.size() == numMapZones);
+        assert(MapZoneArray.size() == NumMapZones);
 
-    for (size_t i = 0; i < numAudioZones; ++i)
+    for (size_t i = 0; i < NumAudioZones; ++i)
         ReadSaveBuf(&loadedAudioZoneArray[i], buffer);
 
-    NumberOfAudioZones = numAudioZones;
+    NumberOfAudioZones = NumAudioZones;
 
-    for (size_t i = 0; i < numZones; ++i)
+    for (size_t i = 0; i < NumZones; ++i)
     {
         ReadSaveBuf(&loadedZoneArray[i], buffer);
         loadedZoneArray[i].m_pChild = GetPointerForZoneIndex((uintptr_t)loadedZoneArray[i].m_pChild);
@@ -432,13 +436,13 @@ void GameZones::TheZones_LoadAllZones(uint8_t* buffer)
         loadedZoneArray[i].m_pNext = GetPointerForZoneIndex((uintptr_t)loadedZoneArray[i].m_pNext);
     }
 
-    for (size_t i = 0; i < numZonesInfos; i++)
+    for (size_t i = 0; i < NumZonesInfos; i++)
         ReadSaveBuf(&loadedZoneInfoArray[i], buffer);
 
-    TotalNumberOfZones = numZones;
-    TotalNumberOfZoneInfos = numZonesInfos;
+    TotalNumberOfZones = NumZones;
+    TotalNumberOfZoneInfos = NumZonesInfos;
 
-    for (size_t i = 0; i < numMapZones; ++i)
+    for (size_t i = 0; i < NumMapZones; ++i)
     {
         ReadSaveBuf(&loadedMapZoneArray[i], buffer);
         loadedMapZoneArray[i].m_pChild = GetPointerForMapZoneIndex((uintptr_t)loadedMapZoneArray[i].m_pChild);
@@ -446,12 +450,28 @@ void GameZones::TheZones_LoadAllZones(uint8_t* buffer)
         loadedMapZoneArray[i].m_pNext = GetPointerForMapZoneIndex((uintptr_t)loadedMapZoneArray[i].m_pNext);
     }
 
-    TotalNumberOfMapZones = numMapZones;
+    TotalNumberOfMapZones = NumMapZones;
+}
+
+void GameZones::AddZoneToAudioZoneArray(CZone* zone)
+{
+    CZone* usedZoneArray = bPatchZones ? &ZoneArray[0] : ogZoneArray;
+    int i, z;
+
+    if (zone->m_eZoneType != ZONE_DEFAULT)
+        return;
+
+    /* This is a bit stupid */
+    z = -1;
+    for (i = 0; i < NumZones; i++)
+        if (&usedZoneArray[i] == zone)
+            z = i;
+    AudioZoneArray[NumberOfAudioZones++] = z;
 }
 
 void cAudioManagerEx::InitialisePoliceRadioZones()
 {
-    for (int i = 0; i < numAudioZones; i++)
+    for (int i = 0; i < NumAudioZones; i++)
         SETZONESFX(i, "A", SFX_POLICE_RADIO_ROCKFORD);
 
     SETZONESFX(0, "HOSPI_2", SFX_POLICE_RADIO_ROCKFORD);
@@ -523,9 +543,9 @@ bool8 cAudioManagerEx::SetupCrimeReport()
 
     if (i == ARRAY_SIZE(m_aCrimes)) return FALSE;
     audioZoneId = FindAudioZone(&m_aCrimes[i].position);
-    if (audioZoneId >= 0 && audioZoneId < numAudioZones) {
+    if (audioZoneId >= 0 && audioZoneId < NumAudioZones) {
         zone = GetAudioZone(audioZoneId);
-        for (int j = 0; j < numAudioZones; j++) {
+        for (int j = 0; j < NumAudioZones; j++) {
             if (strcmp(zone->m_aName, ZoneSfx[j].m_aName) == 0) {
                 sampleIndex = ZoneSfx[j].m_nSampleIndex;
                 PoliceRadioQueue_Add(m_sPoliceRadioQueue, m_anRandomTable[4] % 3 + SFX_POLICE_RADIO_MESSAGE_NOISE_1);
@@ -600,9 +620,9 @@ void cAudioManagerEx::PlaySuspectLastSeen(float x, float y, float z)
 
     if (gMusicManager.m_nMusicMode != MUSICMODE_CUTSCENE && POLICE_RADIO_QUEUE_MAX_SAMPLES - m_sPoliceRadioQueue.m_nSamplesInQueue > 9) {
         audioZone = FindAudioZone(&vec);
-        if (audioZone >= 0 && audioZone < numAudioZones) {
+        if (audioZone >= 0 && audioZone < NumAudioZones) {
             zone = GetAudioZone(audioZone);
-            for (int i = 0; i < numAudioZones; i++) {
+            for (int i = 0; i < NumAudioZones; i++) {
                 if (strcmp(zone->m_aName, ZoneSfx[i].m_aName) == 0) {
                     sample = ZoneSfx[i].m_nSampleIndex;
                     PoliceRadioQueue_Add(m_sPoliceRadioQueue, m_anRandomTable[4] % 3 + SFX_POLICE_RADIO_MESSAGE_NOISE_1);
