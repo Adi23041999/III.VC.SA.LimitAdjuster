@@ -7,7 +7,7 @@
 #include "StoreAdjuster.hpp"
 #include "utility/dummy_object.hpp"
 
-typedef dummy_object_vmt<0x34, 0x50BE60> C2dEffectsInfo_III;
+typedef dummy_object<0x34, 0x50BE60, 0x50BE30> C2dEffectsInfo_III;
 typedef dummy_object_vmt<0x34, 0x5600B0> C2dEffectsInfo_VC;
 
 struct _2dEffectsInfoIII : public StoreAdjuster<C2dEffectsInfo_III, 0x9434F8, 2000>    // T, pDefaultStore, dwDefaultCapacity
