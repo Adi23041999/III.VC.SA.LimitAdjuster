@@ -1,6 +1,6 @@
 /*
 * Parked Cars Limit Adjuster
-* Copyright (c) 2026 5d0
+* Copyright (c) 2026 Fire_Head
 * Licensed under the MIT License (http://opensource.org/licenses/MIT)
 */
 #include "LimitAdjuster.h"
@@ -11,12 +11,11 @@ using namespace injector;
 class ParkedCars : public SimpleAdjuster
 {
 public:
-	virtual const char* GetLimitName() override { "ParkedCars"; }
+	virtual const char* GetLimitName() override { return "ParkedCars"; }
 	virtual void ChangeLimit(int, const std::string& value) override
 	{
 		int n = std::stoi(value);
 		injector::WriteMemory<uint8_t>(0x542706, n, true);
 	}
-
 } ParkedCars;
 #endif // GTA3
