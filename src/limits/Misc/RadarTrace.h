@@ -1,5 +1,5 @@
 /*
-* Ped Groups Limit Adjuster
+* Blips Limit Adjuster
 * Copyright (c) 2025 Adi <adriank3d@gmail.com>
 * Licensed under the MIT License (http://opensource.org/licenses/MIT)
 */
