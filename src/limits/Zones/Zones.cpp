@@ -1,10 +1,4 @@
-/*
-* Zones Limits Adjuster
-* Copyright (c) 2025 Adi <adriank3d@gmail.com>
-* Licensed under the MIT License (http://opensource.org/licenses/MIT)
-*/
 #ifdef GTA3
-
 #include "Zones.h"
 #include "Events.h"
 #include "CTheZones.h"
@@ -14,92 +8,37 @@
 
 using namespace injector;
 
-// -- defaults
+bool GameZones::bPatchAudioZones = false;
+bool GameZones::bPatchZones = false;
+bool GameZones::bPatchMapZones = false;
+uint16 GameZones::NumAudioZones = 36;
+uint16 GameZones::NumZones = 50;
+uint16 GameZones::NumZonesInfos = NumZones * 2;
+uint16 GameZones::NumMapZones = 25;
 
-bool bPatchAudioZones = false;
-bool bPatchZones = false;
-bool bPatchMapZones = false;
-uint16_t NumAudioZones = 36;
-uint16_t NumZones = 50;
-uint16_t NumZonesInfos = NumZones * 2;
-uint16_t NumMapZones = 25;
-
-std::vector<short> AudioZoneArray;
-std::vector<tPoliceRadioZone> ZoneSfx;
-std::vector<CZone> ZoneArray;
-std::vector<CZoneInfo> ZoneInfoArray;
-std::vector<CZone> MapZoneArray;
+std::vector<short> GameZones::AudioZoneArray;
+std::vector<tPoliceRadioZone> GameZones::ZoneSfx;
+std::vector<CZone> GameZones::ZoneArray;
+std::vector<CZoneInfo> GameZones::ZoneInfoArray;
+std::vector<CZone> GameZones::MapZoneArray;
 
 short* ogAudioZoneArray = (short*)(0x713BC0);
 CZone* ogZoneArray = (CZone*)(0x86BEE0);
 CZoneInfo* ogZoneInfoArray = (CZoneInfo*)(0x714400);
 CZone* ogMapZoneArray = (CZone*)(0x663EC0);
 
-uint16_t& NumberOfAudioZones = *(uint16_t*)0x95CC84;
-uint16_t& TotalNumberOfMapZones = *(uint16_t*)0x95CC74;
-uint16_t& TotalNumberOfZones = *(uint16_t*)0x95CC36;
-uint16_t& TotalNumberOfZoneInfos = *(uint16_t*)0x95CC3C;
+uint16& NumberOfAudioZones = *(uint16*)0x95CC84;
+uint16& TotalNumberOfMapZones = *(uint16*)0x95CC74;
+uint16& TotalNumberOfZones = *(uint16*)0x95CC36;
+uint16& TotalNumberOfZoneInfos = *(uint16*)0x95CC3C;
 
 eLevelName& m_CurrLevel = *(eLevelName*)0x8F2BC8;
 CZone* m_pPlayersZone = (CZone*)(0x8F254C);
-uint16_t& FindIndex = *(uint16_t*)0x95CC40;
+uint16& FindIndex = *(uint16*)0x95CC40;
 
 char* SubZo2Label = (char*)(0x6E9918);
 char* SubZo3Label = (char*)(0x6E9870);
 bool8& gSpecialSuspectLastSeenReport = *(bool8*)(0x95CD4D);
-
-// -- helpers
-
-// the adjuster leaves zone init function unchanged; copy these for our patched zones
-static ptrdiff_t GetIndexForZonePointer(CZone* zone) { return zone == nullptr ? -1 : zone - &ZoneArray[0]; }
-static CZone* GetPointerForZoneIndex(ptrdiff_t i) { return i == -1 ? nullptr : &ZoneArray[i]; }
-
-// vanilla used the above for map zone array which is a bug
-static ptrdiff_t GetIndexForMapZonePointer(CZone* zone) { return zone == nullptr ? -1 : zone - &MapZoneArray[0]; }
-static CZone* GetPointerForMapZoneIndex(ptrdiff_t i) { return i == -1 ? nullptr : &MapZoneArray[i]; }
-
-// well, vanilla needs to be fixed if map zone limit isn't patched but regular zones are...
-static ptrdiff_t GetIndexForMapZonePointerOgFixed(CZone* zone) { return zone == nullptr ? -1 : zone - ogMapZoneArray; }
-static CZone* GetPointerForMapZoneIndexOgFixed(ptrdiff_t i) { return i == -1 ? nullptr : &ogMapZoneArray[i]; }
-
-static CZone* GetAudioZone(uint16_t i)
-{
-    return &ZoneArray[AudioZoneArray[i]];
-}
-
-static bool PointLiesWithinZone(const CVector* v, CZone* zone)
-{
-    return zone->m_vecMin.x <= v->x && v->x <= zone->m_vecMax.x &&
-        zone->m_vecMin.y <= v->y && v->y <= zone->m_vecMax.y &&
-        zone->m_vecMin.z <= v->z && v->z <= zone->m_vecMax.z;
-}
-
-static uint16_t FindAudioZone(CVector* pos)
-{
-    int i;
-
-    for (i = 0; i < NumAudioZones; i++)
-        if (PointLiesWithinZone(pos, GetAudioZone(i)))
-            return i;
-    return -1;
-}
-
-static void SETZONESFX(int i, const char* name, uint32_t sample)
-{
-    strcpy(ZoneSfx[i].m_aName, name);
-    ZoneSfx[i].m_nSampleIndex = sample;
-};
-
-static bool8 PoliceRadioQueue_Add(cPoliceRadioQueue& queue, uint32_t sample)
-{
-    if (queue.m_nSamplesInQueue != POLICE_RADIO_QUEUE_MAX_SAMPLES) {
-        queue.m_aSamples[queue.m_nAddOffset] = sample;
-        queue.m_nSamplesInQueue++;
-        queue.m_nAddOffset = (queue.m_nAddOffset + 1) % POLICE_RADIO_QUEUE_MAX_SAMPLES;
-        return TRUE;
-    }
-    return FALSE;
-}
 
 // -- patches
 
@@ -154,7 +93,7 @@ void GameZones::Process()
             MakeJMP(0x57EAC0, cAudioManagerEx::InitialisePoliceRadioZones);
             MakeJMP(0x57F5B0, &cAudioManagerEx::SetupCrimeReport);
             MakeJMP(0x580500, &cAudioManagerEx::PlaySuspectLastSeen);
-            MakeJMP(0x4B83E0, FindAudioZone);
+            MakeJMP(0x4B83E0, cAudioManagerEx::FindAudioZone);
             MakeJMP(0x4B8340, AddZoneToAudioZoneArray);
         }
 
@@ -469,9 +408,78 @@ void GameZones::AddZoneToAudioZoneArray(CZone* zone)
     AudioZoneArray[NumberOfAudioZones++] = z;
 }
 
+ptrdiff_t GameZones::GetIndexForZonePointer(CZone* zone)
+{
+    return zone == nullptr ? -1 : zone - &ZoneArray[0];
+}
+
+CZone* GameZones::GetPointerForZoneIndex(ptrdiff_t i)
+{
+    return i == -1 ? nullptr : &ZoneArray[i];
+}
+
+ptrdiff_t GameZones::GetIndexForMapZonePointer(CZone* zone)
+{
+    return zone == nullptr ? -1 : zone - &MapZoneArray[0];
+}
+
+CZone* GameZones::GetPointerForMapZoneIndex(ptrdiff_t i)
+{
+    return i == -1 ? nullptr : &MapZoneArray[i];
+}
+
+ptrdiff_t GameZones::GetIndexForMapZonePointerOgFixed(CZone* zone)
+{
+    return zone == nullptr ? -1 : zone - ogMapZoneArray;
+}
+
+CZone* GameZones::GetPointerForMapZoneIndexOgFixed(ptrdiff_t i)
+{
+    return i == -1 ? nullptr : &ogMapZoneArray[i];
+}
+
+bool GameZones::PointLiesWithinZone(const CVector* v, CZone* zone)
+{
+    return zone->m_vecMin.x <= v->x && v->x <= zone->m_vecMax.x &&
+        zone->m_vecMin.y <= v->y && v->y <= zone->m_vecMax.y &&
+        zone->m_vecMin.z <= v->z && v->z <= zone->m_vecMax.z;
+}
+
+CZone* cAudioManagerEx::GetAudioZone(uint16 i)
+{
+    return &GameZones::ZoneArray[GameZones::AudioZoneArray[i]];
+}
+
+uint16 cAudioManagerEx::FindAudioZone(CVector* pos)
+{
+    int i;
+
+    for (i = 0; i < GameZones::NumAudioZones; i++)
+        if (GameZones::PointLiesWithinZone(pos, GetAudioZone(i)))
+            return i;
+    return -1;
+}
+
+void cAudioManagerEx::SETZONESFX(int i, const char* name, uint32_t sample)
+{
+    strcpy(GameZones::ZoneSfx[i].m_aName, name);
+    GameZones::ZoneSfx[i].m_nSampleIndex = sample;
+}
+
+bool8 cAudioManagerEx::PoliceRadioQueue_Add(cPoliceRadioQueue& queue, uint32_t sample)
+{
+    if (queue.m_nSamplesInQueue != POLICE_RADIO_QUEUE_MAX_SAMPLES) {
+        queue.m_aSamples[queue.m_nAddOffset] = sample;
+        queue.m_nSamplesInQueue++;
+        queue.m_nAddOffset = (queue.m_nAddOffset + 1) % POLICE_RADIO_QUEUE_MAX_SAMPLES;
+        return TRUE;
+    }
+    return FALSE;
+}
+
 void cAudioManagerEx::InitialisePoliceRadioZones()
 {
-    for (int i = 0; i < NumAudioZones; i++)
+    for (int i = 0; i < GameZones::NumAudioZones; i++)
         SETZONESFX(i, "A", SFX_POLICE_RADIO_ROCKFORD);
 
     SETZONESFX(0, "HOSPI_2", SFX_POLICE_RADIO_ROCKFORD);
@@ -543,11 +551,11 @@ bool8 cAudioManagerEx::SetupCrimeReport()
 
     if (i == ARRAY_SIZE(m_aCrimes)) return FALSE;
     audioZoneId = FindAudioZone(&m_aCrimes[i].position);
-    if (audioZoneId >= 0 && audioZoneId < NumAudioZones) {
+    if (audioZoneId >= 0 && audioZoneId < GameZones::NumAudioZones) {
         zone = GetAudioZone(audioZoneId);
-        for (int j = 0; j < NumAudioZones; j++) {
-            if (strcmp(zone->m_aName, ZoneSfx[j].m_aName) == 0) {
-                sampleIndex = ZoneSfx[j].m_nSampleIndex;
+        for (int j = 0; j < GameZones::NumAudioZones; j++) {
+            if (strcmp(zone->m_aName, GameZones::ZoneSfx[j].m_aName) == 0) {
+                sampleIndex = GameZones::ZoneSfx[j].m_nSampleIndex;
                 PoliceRadioQueue_Add(m_sPoliceRadioQueue, m_anRandomTable[4] % 3 + SFX_POLICE_RADIO_MESSAGE_NOISE_1);
                 PoliceRadioQueue_Add(m_sPoliceRadioQueue, m_anRandomTable[0] % 3 + SFX_WEVE_GOT);
                 PoliceRadioQueue_Add(m_sPoliceRadioQueue, m_anRandomTable[1] % 2 + SFX_A_10_1);
@@ -620,11 +628,11 @@ void cAudioManagerEx::PlaySuspectLastSeen(float x, float y, float z)
 
     if (gMusicManager.m_nMusicMode != MUSICMODE_CUTSCENE && POLICE_RADIO_QUEUE_MAX_SAMPLES - m_sPoliceRadioQueue.m_nSamplesInQueue > 9) {
         audioZone = FindAudioZone(&vec);
-        if (audioZone >= 0 && audioZone < NumAudioZones) {
+        if (audioZone >= 0 && audioZone < GameZones::NumAudioZones) {
             zone = GetAudioZone(audioZone);
-            for (int i = 0; i < NumAudioZones; i++) {
-                if (strcmp(zone->m_aName, ZoneSfx[i].m_aName) == 0) {
-                    sample = ZoneSfx[i].m_nSampleIndex;
+            for (int i = 0; i < GameZones::NumAudioZones; i++) {
+                if (strcmp(zone->m_aName, GameZones::ZoneSfx[i].m_aName) == 0) {
+                    sample = GameZones::ZoneSfx[i].m_nSampleIndex;
                     PoliceRadioQueue_Add(m_sPoliceRadioQueue, m_anRandomTable[4] % 3 + SFX_POLICE_RADIO_MESSAGE_NOISE_1);
                     PoliceRadioQueue_Add(m_sPoliceRadioQueue, SFX_POLICE_RADIO_SUSPECT);
                     PoliceRadioQueue_Add(m_sPoliceRadioQueue, SFX_POLICE_RADIO_LAST_SEEN);

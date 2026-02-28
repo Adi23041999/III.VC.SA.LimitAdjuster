@@ -1,11 +1,9 @@
+#ifdef GTA3
 #include "ObjectInfo.h"
-#include "CObjectData.h"
 
 using namespace injector;
 
-
-#ifdef GTA3
-std::vector<CObjectInfo> aObjectInfo;
+std::vector<CObjectInfo> ObjectInfo::aObjectInfo;
 
 void ObjectInfo::ChangeLimit(int, const std::string& value)
 {

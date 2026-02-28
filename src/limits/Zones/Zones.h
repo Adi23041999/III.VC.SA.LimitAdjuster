@@ -3,8 +3,11 @@
 * Copyright (c) 2025 Adi <adriank3d@gmail.com>
 * Licensed under the MIT License (http://opensource.org/licenses/MIT)
 */
+
+#pragma once
 #include "LimitAdjuster.h"
 #include "Events.h"
+#include "OLACommon.h"
 #include "cAudioManager.h"
 
 #ifdef GTA3
@@ -17,6 +20,20 @@ public:
         Zones,
         MapZones,
     };
+
+    static bool bPatchAudioZones;
+    static bool bPatchZones;
+    static bool bPatchMapZones;
+    static uint16 NumAudioZones;
+    static uint16 NumZones;
+    static uint16 NumZonesInfos;
+    static uint16 NumMapZones;
+
+    static std::vector<short> AudioZoneArray;
+    static std::vector<struct tPoliceRadioZone> ZoneSfx;
+    static std::vector<class CZone> ZoneArray;
+    static std::vector<struct CZoneInfo> ZoneInfoArray;
+    static std::vector<CZone> MapZoneArray;
 
     virtual const Limit* GetLimits() override;
     virtual void ChangeLimit(int id, const std::string& value) override;
@@ -32,6 +49,22 @@ public:
     static void TheZones_SaveAllZones(uint8_t* buffer, uint32_t* size);
     static void TheZones_LoadAllZones(uint8_t* buffer);
     static void AddZoneToAudioZoneArray(class CZone* zone);
+
+    // -- helpers
+
+    // the adjuster leaves zone init function unchanged; copy these for our patched zones
+    static ptrdiff_t GetIndexForZonePointer(CZone* zone);
+    static CZone* GetPointerForZoneIndex(ptrdiff_t i);
+
+    // vanilla used the above for map zone array which is a bug
+    static ptrdiff_t GetIndexForMapZonePointer(CZone* zone);
+    static CZone* GetPointerForMapZoneIndex(ptrdiff_t i);
+
+    // well, vanilla needs to be fixed if map zone limit isn't patched but regular zones are...
+    static ptrdiff_t GetIndexForMapZonePointerOgFixed(CZone* zone);
+    static CZone* GetPointerForMapZoneIndexOgFixed(ptrdiff_t i);
+
+    static bool PointLiesWithinZone(const CVector* v, CZone* zone);
 } GameZones;
 
 #define POLICE_RADIO_QUEUE_MAX_SAMPLES 60
@@ -40,6 +73,11 @@ public:
 class cAudioManagerEx : public cAudioManager
 {
 public:
+    static CZone* GetAudioZone(uint16 i);
+    static uint16 FindAudioZone(CVector* pos);
+    static void SETZONESFX(int i, const char* name, uint32_t sample);
+    static bool8 PoliceRadioQueue_Add(cPoliceRadioQueue& queue, uint32_t sample);
+
     static void InitialisePoliceRadioZones();
     bool8 SetupCrimeReport();
     void PlaySuspectLastSeen(float x, float y, float z);

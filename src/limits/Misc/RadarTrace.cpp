@@ -1,30 +1,13 @@
+#ifdef GTA3
 #include "RadarTrace.h"
 #include "OLACommon.h"
 #include "SaveBuf.h"
 #include "CTxdStore.h"
 
-#ifdef GTA3
+using namespace injector;
 
-class PLUGIN_API tRadarTraceEx {
-public:
-	unsigned int m_nColour; //!< see eBlipColour
-	unsigned int m_nBlipType; //!< see eBlipType
-	int m_nEntityHandle;
-	CVector2D m_vec2DPos;
-	CVector m_vecPos;
-	unsigned short m_nBlipIndex;
-	bool m_bDim;
-	bool m_bInUse;
-	float m_fSphereRadius;
-	unsigned short m_nBlipSize;
-	unsigned short m_nBlipDisplay; //!< see eBlipDisplay
-	unsigned short m_nRadarSprite; //!< see eRadarSprite
-	unsigned short m_nExtra; // OLA extra
-};
-VALIDATE_SIZE(tRadarTraceEx, 0x30);
-
-std::vector<tRadarTraceEx> ms_RadarTrace;
-uint8_t NumRadarTrace = 32;
+std::vector<tRadarTraceEx> RadarTrace::ms_RadarTrace;
+uint8 RadarTrace::NumRadarTrace = 32;
 
 const char* RadarTrace::GetLimitName()
 {

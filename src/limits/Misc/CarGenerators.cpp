@@ -1,116 +1,139 @@
-/*
-* Car Generators Limit Adjuster
-* Copyright (c) 2025 Adi <adriank3d@gmail.com>
-* Licensed under the MIT License (http://opensource.org/licenses/MIT)
-*/
-#include "LimitAdjuster.h"
+#ifdef GTA3
+#include "CarGenerators.h"
+#include "SaveBuf.h"
+#include "CCarGenerator.h"
+#include "CTheCarGenerators.h"
 
 using namespace injector;
 
-int numCarGenerators;
-std::vector<char> carGeneratorArray;
+std::vector<CCarGenerator> CarGenerators::CarGeneratorArray;
 
-DWORD ext_5431DD = 0x5431DD;
-DWORD ext_5430C4 = 0x5430C4;
-void __declspec(naked) SaveAllCarGeneratorsHook()
+const char* CarGenerators::GetLimitName()
 {
-    __asm
-    {
-		cmp eax, numCarGenerators
-        fstp dword ptr [ebx]
-        jb loc_5430C4
-        jmp ext_5431DD
-	loc_5430C4:
-		jmp ext_5430C4
-    }
+    return "CarGenerators";
 }
 
-DWORD ext_543326 = 0x543326;
-DWORD ext_543215 = 0x543215;
-void __declspec(naked) LoadAllCarGeneratorsHook()
+void CarGenerators::ChangeLimit(int id, const std::string& value)
 {
-    __asm
-    {
-        cmp eax, numCarGenerators
-        jb loc_543215
-        jmp ext_543326
-    loc_543215:
-        jmp ext_543215
-    }
+    int32 numCarGenerators = std::stoi(value);
+    CarGeneratorArray.resize(numCarGenerators);
+
+    WriteMemory(0x43F0F2, &CarGeneratorArray[0] + 0x0, true);
+    WriteMemory(0x542F83, &CarGeneratorArray[0] + 0x0, true);
+    WriteMemory(0x543003, &CarGeneratorArray[0] + 0x0, true);
+    MakeJMP(0x543050, SaveAllCarGenerators);
+    MakeJMP(0x5431E0, LoadAllCarGenerators);
+
+#ifdef FIX_BUGS
+    // overriden because cleo cargens overflow the car gen array when game is loaded
+    // ie. game loads saved car gens (including cleo ones) and cleo car gens also get added again on top
+    // VC guards for overflow but still duplication happens
+    MakeJMP(0x542FC0, CreateCarGenerator);
+#endif // FIX_BUGS
 }
 
-class ZoneLimits : public SimpleAdjuster
+void CarGenerators::CopyCarGen(CCarGenerator& lhs, const CCarGenerator& rhs)
 {
-public:
+	lhs.m_nModelId = rhs.m_nModelId;
+	lhs.m_vecPos = rhs.m_vecPos;
+	lhs.m_fAngle = rhs.m_fAngle;
+	lhs.m_nPrimaryColor = rhs.m_nPrimaryColor;
+	lhs.m_nSecondaryColor = rhs.m_nSecondaryColor;
+	lhs.m_nForceSpawn = rhs.m_nForceSpawn;
+	lhs.m_nAlarm = rhs.m_nAlarm;
+	lhs.m_nDoorLock = rhs.m_nDoorLock;
+	lhs.m_nMinDelay = rhs.m_nMinDelay;
+	lhs.m_nMaxDelay = rhs.m_nMaxDelay;
+	lhs.m_nTimeNextGen = rhs.m_nTimeNextGen;
+	lhs.m_nVehicleHandle = rhs.m_nVehicleHandle;
+	lhs.m_nEnabled = rhs.m_nEnabled;
+	lhs.m_bIsBlocking = rhs.m_bIsBlocking;
+	lhs.m_vecInf = rhs.m_vecInf;
+	lhs.m_vecSup = rhs.m_vecSup;
+	lhs.m_fDistance = rhs.m_fDistance;
+}
 
-    const char* GetLimitName()
+bool CarGenerators::DoesCarGenExistAtLocation(float x, float y, float z, float angle, int32 mi, uint32& carGenIdx)
+{
+    for (size_t i = 0; i < CarGeneratorArray.size(); i++)
     {
-        return IsIII() ? "CarGenerators" : nullptr;
+        CCarGenerator& cg = CarGeneratorArray[i];
+        if (cg.m_nModelId == mi && std::fabs(cg.m_vecPos.x - x) < 0.01f && std::fabs(cg.m_vecPos.y - y) < 0.01f && std::fabs(cg.m_vecPos.z - z) < 0.01f && std::fabs(cg.m_fAngle - angle) < 0.01f)
+        {
+            carGenIdx = i;
+            return true;
+        }
     }
 
-    void ChangeLimit(int id, const std::string& value)
+    return false;
+}
+
+void CarGenerators::SaveAllCarGenerators(uint8* buffer, uint32* size)
+{
+    const uint32 carGenSize = (sizeof(CCarGenerator) * CarGeneratorArray.size());
+    const uint32 nGeneralDataSize = sizeof(CTheCarGenerators::NumOfCarGenerators) + sizeof(CTheCarGenerators::CurrentActiveCount) + sizeof(CTheCarGenerators::ProcessCounter) + sizeof(CTheCarGenerators::GenerateEvenIfPlayerIsCloseCounter) + sizeof(int16);
+    *size = sizeof(int) + nGeneralDataSize + sizeof(uint32) + carGenSize + SAVE_HEADER_SIZE;
+    INITSAVEBUF
+        WriteSaveHeader(buffer, 'C', 'G', 'N', '\0', *size - SAVE_HEADER_SIZE);
+
+    WriteSaveBuf(buffer, nGeneralDataSize);
+    WriteSaveBuf(buffer, CTheCarGenerators::NumOfCarGenerators);
+    WriteSaveBuf(buffer, CTheCarGenerators::CurrentActiveCount);
+    WriteSaveBuf(buffer, CTheCarGenerators::ProcessCounter);
+    WriteSaveBuf(buffer, CTheCarGenerators::GenerateEvenIfPlayerIsCloseCounter);
+    WriteSaveBuf(buffer, (int16)0); // alignment
+    WriteSaveBuf(buffer, carGenSize);
+    for (size_t i = 0; i < CarGeneratorArray.size(); i++)
     {
-		numCarGenerators = std::stoi(value);
-		carGeneratorArray.resize(0x48 * numCarGenerators);
-
-		WriteMemory(0x43F0F2, &carGeneratorArray[0] + 0x0, true);
-        WriteMemory(0x542F83, &carGeneratorArray[0] + 0x0, true);
-        WriteMemory(0x543003, &carGeneratorArray[0] + 0x0, true);
-        WriteMemory(0x5430C6, &carGeneratorArray[0] + 0x0, true);
-        WriteMemory(0x5430D2, &carGeneratorArray[0] + 0x4, true);
-        WriteMemory(0x5430DA, &carGeneratorArray[0] + 0x4 + 0x4, true);
-        WriteMemory(0x5430E5, &carGeneratorArray[0] + 0x4 + 0x8, true);
-        WriteMemory(0x5430F0, &carGeneratorArray[0] + 0x10, true);
-        WriteMemory(0x5430FC, &carGeneratorArray[0] + 0x14, true);
-        WriteMemory(0x54310C, &carGeneratorArray[0] + 0x16, true);
-        WriteMemory(0x543115, &carGeneratorArray[0] + 0x18, true);
-        WriteMemory(0x54311E, &carGeneratorArray[0] + 0x19, true);
-        WriteMemory(0x543127, &carGeneratorArray[0] + 0x1A, true);
-        WriteMemory(0x543135, &carGeneratorArray[0] + 0x1C, true);
-        WriteMemory(0x543145, &carGeneratorArray[0] + 0x1E, true);
-        WriteMemory(0x543151, &carGeneratorArray[0] + 0x20, true);
-        WriteMemory(0x54315C, &carGeneratorArray[0] + 0x24, true);
-        WriteMemory(0x543168, &carGeneratorArray[0] + 0x28, true);
-        WriteMemory(0x543171, &carGeneratorArray[0] + 0x2A, true);
-        WriteMemory(0x54317E, &carGeneratorArray[0] + 0x2C, true);
-        WriteMemory(0x543189, &carGeneratorArray[0] + 0x2C + 0x4, true);
-        WriteMemory(0x543195, &carGeneratorArray[0] + 0x2C + 0x8, true);
-        WriteMemory(0x5431A1, &carGeneratorArray[0] + 0x38, true);
-        WriteMemory(0x5431AC, &carGeneratorArray[0] + 0x38 + 0x4, true);
-        WriteMemory(0x5431B8, &carGeneratorArray[0] + 0x38 + 0x8, true);
-        WriteMemory(0x5431C4, &carGeneratorArray[0] + 0x44, true);
-        WriteMemory(0x54321A, &carGeneratorArray[0] + 0x0, true);
-        WriteMemory(0x543225, &carGeneratorArray[0] + 0x4, true);
-        WriteMemory(0x543230, &carGeneratorArray[0] + 0x4 + 0x4, true);
-        WriteMemory(0x54323B, &carGeneratorArray[0] + 0x4 + 0x8, true);
-        WriteMemory(0x543246, &carGeneratorArray[0] + 0x10, true);
-        WriteMemory(0x543253, &carGeneratorArray[0] + 0x14, true);
-        WriteMemory(0x543260, &carGeneratorArray[0] + 0x16, true);
-        WriteMemory(0x543269, &carGeneratorArray[0] + 0x18, true);
-        WriteMemory(0x543272, &carGeneratorArray[0] + 0x19, true);
-        WriteMemory(0x54327B, &carGeneratorArray[0] + 0x1A, true);
-        WriteMemory(0x543288, &carGeneratorArray[0] + 0x1C, true);
-        WriteMemory(0x543295, &carGeneratorArray[0] + 0x1E, true);
-        WriteMemory(0x5432A0, &carGeneratorArray[0] + 0x20, true);
-        WriteMemory(0x5432AB, &carGeneratorArray[0] + 0x24, true);
-        WriteMemory(0x5432B8, &carGeneratorArray[0] + 0x28, true);
-        WriteMemory(0x5432C1, &carGeneratorArray[0] + 0x2A, true);
-        WriteMemory(0x5432CC, &carGeneratorArray[0] + 0x2C, true);
-        WriteMemory(0x5432D8, &carGeneratorArray[0] + 0x2C + 0x4, true);
-        WriteMemory(0x5432E4, &carGeneratorArray[0] + 0x2C + 0x8, true);
-        WriteMemory(0x5432EF, &carGeneratorArray[0] + 0x38, true);
-        WriteMemory(0x5432FB, &carGeneratorArray[0] + 0x38 + 0x4, true);
-        WriteMemory(0x543307, &carGeneratorArray[0] + 0x38 + 0x8, true);
-        WriteMemory(0x543315, &carGeneratorArray[0] + 0x44, true);
-
-        MakeJMP(0x5431D1, SaveAllCarGeneratorsHook);
-        MakeJMP(0x54331C, LoadAllCarGeneratorsHook);
-
-		int newCarGenSize = 0x48 * numCarGenerators;
-        int saveSize = 0x2D1C;
-        saveSize -= 0x48 * 160;
-		saveSize += newCarGenSize;
-        WriteMemory(0x54305C, saveSize, true);
-        WriteMemory(0x5430BE, newCarGenSize, true);
+        //WriteSaveBuf(buffer, CarGeneratorArray[i]);
+        CopyCarGen(*(CCarGenerator*)buffer, CarGeneratorArray[i]);
+        SkipSaveBuf(buffer, sizeof(CCarGenerator));
     }
-} CarGenerators;
+    VALIDATESAVEBUF(*size)
+}
+
+void CarGenerators::LoadAllCarGenerators(uint8* buffer, uint32 size)
+{
+    const uint32 carGenSize = (sizeof(CCarGenerator) * CarGeneratorArray.size());
+    const int32 nGeneralDataSize = sizeof(CTheCarGenerators::NumOfCarGenerators) + sizeof(CTheCarGenerators::CurrentActiveCount) + sizeof(CTheCarGenerators::ProcessCounter) + sizeof(CTheCarGenerators::GenerateEvenIfPlayerIsCloseCounter) + sizeof(int16);
+
+    //Init();
+    plugin::Call<0x543020>();
+
+    INITSAVEBUF
+        CheckSaveHeader(buffer, 'C', 'G', 'N', '\0', size - SAVE_HEADER_SIZE);
+    uint32 tmp;
+    ReadSaveBuf(&tmp, buffer);
+    assert(tmp == nGeneralDataSize);
+    ReadSaveBuf(&CTheCarGenerators::NumOfCarGenerators, buffer);
+    ReadSaveBuf(&CTheCarGenerators::CurrentActiveCount, buffer);
+    ReadSaveBuf(&CTheCarGenerators::ProcessCounter, buffer);
+    ReadSaveBuf(&CTheCarGenerators::GenerateEvenIfPlayerIsCloseCounter, buffer);
+    SkipSaveBuf(buffer, 2);
+    ReadSaveBuf(&tmp, buffer);
+    assert(tmp == carGenSize);
+    for (size_t i = 0; i < CarGeneratorArray.size(); i++)
+    {
+        //ReadSaveBuf(&CarGeneratorArray[i], buffer);
+		CopyCarGen(CarGeneratorArray[i], *(CCarGenerator*)buffer);
+        SkipSaveBuf(buffer, sizeof(CCarGenerator));
+    }
+    VALIDATESAVEBUF(size)
+}
+
+int32 CarGenerators::CreateCarGenerator(float x, float y, float z, float angle, int32 mi, int16 color1, int16 color2, uint8 force, uint8 alarm, uint8 lock, uint16 min_delay, uint16 max_delay)
+{
+	uint32 carGenIdx;
+    if (DoesCarGenExistAtLocation(x, y, z, angle, mi, carGenIdx))
+    {
+        CarGeneratorArray[carGenIdx].Setup(x, y, z, angle, mi, color1, color2, force, alarm, lock, min_delay, max_delay);
+		return carGenIdx;
+    }
+    else if (CTheCarGenerators::NumOfCarGenerators < CarGeneratorArray.size())
+    {
+        CarGeneratorArray[CTheCarGenerators::NumOfCarGenerators].Setup(x, y, z, angle, mi, color1, color2, force, alarm, lock, min_delay, max_delay);
+        return CTheCarGenerators::NumOfCarGenerators++;
+    }
+    return CTheCarGenerators::NumOfCarGenerators;
+}
+#endif // GTA3

@@ -1,3 +1,4 @@
+#ifdef GTA3
 #include "PedGroups.h"
 #include "CPopulation.h"
 #include "CTheZones.h"
@@ -5,10 +6,10 @@
 #include "CGeneral.h"
 #include "CFileMgr.h"
 
-#ifdef GTA3
-int NumPedGroups = 31;
-int NumPedGroupModels = 8;
-std::vector<std::vector<int>> ms_pPedGroups;
+
+std::vector<std::vector<int>> PedGroup::ms_pPedGroups;
+int PedGroup::NumPedGroups = 31;
+int PedGroup::NumPedGroupModels = 8;
 
 const Adjuster::Limit* PedGroup::GetLimits()
 {

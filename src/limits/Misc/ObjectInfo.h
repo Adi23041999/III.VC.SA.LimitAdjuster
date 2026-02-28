@@ -3,12 +3,17 @@
 * Copyright (c) 2026 Adi <adriank3d@gmail.com>
 * Licensed under the MIT License (http://opensource.org/licenses/MIT)
 */
+
+#pragma once
 #include "LimitAdjuster.h"
+#include "CObjectData.h"
 
 #ifdef GTA3
 class ObjectInfo : public SimpleAdjuster
 {
 public:
+	static std::vector<struct CObjectInfo> aObjectInfo;
+
 	virtual const char* GetLimitName() override { return "ObjectInfo"; }
 	virtual void ChangeLimit(int, const std::string& value) override;
 } ObjectInfo;
