@@ -58,7 +58,7 @@ bool CarGenerators::DoesCarGenExistAtLocation(float x, float y, float z, float a
     for (size_t i = 0; i < CarGeneratorArray.size(); i++)
     {
         CCarGenerator& cg = CarGeneratorArray[i];
-        if (cg.m_nModelId == mi && std::fabs(cg.m_vecPos.x - x) < 0.01f && std::fabs(cg.m_vecPos.y - y) < 0.01f && std::fabs(cg.m_vecPos.z - z) < 0.01f && std::fabs(cg.m_fAngle - angle) < 0.01f)
+        if (cg.m_nModelId == mi && NearlyEqual(cg.m_vecPos.x, x) && NearlyEqual(cg.m_vecPos.y, y) && NearlyEqual(cg.m_vecPos.z, z) && NearlyEqual(cg.m_fAngle, angle))
         {
             carGenIdx = i;
             return true;
