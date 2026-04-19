@@ -107,7 +107,7 @@ project "OpenLimitAdjuster"
 		defines { "III", "GTA3" }
 		debugdir "$(GTA_III_DIR)"
 		debugcommand "$(GTA_III_DIR)/gta3.exe"
-		--debugcommand "D:/Projects/3D/GTA/Liberty City Countryside/GTA 3 UL/gta3 1.0.exe"
+		--debugcommand "D:/Projects/3D/GTA/Liberty City Countryside/GTA 3 UL/gta3.exe"
 		--debugdir "D:/Projects/3D/GTA/Liberty City Countryside/GTA 3 UL"
 		includedirs {
 			"$(PLUGIN_SDK_DIR)/plugin_III/",
@@ -116,7 +116,7 @@ project "OpenLimitAdjuster"
 		}
 		postbuildcommands {
 		"copy /y \"$(TargetPath)\" \"$(GTA_III_DIR)\\scripts\\III.OpenLimitAdjuster.asi\"",
-		"copy /y \"$(TargetPath)\" \"D:\\Projects\\3D\\GTA\\Liberty City Countryside\\GTA 3 UL\\III.OpenLimitAdjuster.asi\"",
+		--"copy /y \"$(TargetPath)\" \"D:\\Projects\\3D\\GTA\\Liberty City Countryside\\GTA 3 UL\\scripts\\III.OpenLimitAdjuster.asi\"",
 		}
 
 	filter { "platforms:GTAVC" }

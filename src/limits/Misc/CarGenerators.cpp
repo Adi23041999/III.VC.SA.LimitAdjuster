@@ -55,7 +55,7 @@ void CarGenerators::CopyCarGen(CCarGenerator& lhs, const CCarGenerator& rhs)
 
 bool CarGenerators::DoesCarGenExistAtLocation(float x, float y, float z, float angle, int32 mi, uint32& carGenIdx)
 {
-    for (size_t i = 0; i < CarGeneratorArray.size(); i++)
+    for (size_t i = 0; i < CTheCarGenerators::NumOfCarGenerators; i++)
     {
         CCarGenerator& cg = CarGeneratorArray[i];
         if (cg.m_nModelId == mi && NearlyEqual(cg.m_vecPos.x, x) && NearlyEqual(cg.m_vecPos.y, y) && NearlyEqual(cg.m_vecPos.z, z) && NearlyEqual(cg.m_fAngle, angle))

@@ -6,7 +6,6 @@
 #include "LimitAdjuster.h"
 
 using namespace injector;
-
 #ifdef GTA3
 class ParkedCars : public SimpleAdjuster
 {

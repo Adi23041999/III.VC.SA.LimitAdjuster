@@ -27,7 +27,8 @@ public:
 		WriteMemory(0x540C51 + 2, &BoatBounds::BoundsN, true);
 	}
 } BoatBounds;
-#endif // GTA3
 
 float BoatBounds::BoundsP = 1900.0f;
 float BoatBounds::BoundsN = -1900.0f;
+#endif // GTA3
+

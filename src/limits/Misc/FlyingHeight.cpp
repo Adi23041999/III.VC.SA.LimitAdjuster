@@ -25,6 +25,7 @@ public:
 		}
 	}
 } FlyingHeight;
-#endif // GTA3
 
 float FlyingHeight::HeightLimit = 0.0f;
+#endif // GTA3
+
