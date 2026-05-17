@@ -188,7 +188,7 @@ static void __cdecl PickNextNodeRandomly(CVehicle* pVehicle)
 	if (lanesOnNextNode >= 0) {
 		if ((OLA::GetRandomNumber() & 0x600) == 0) {
 			/* 25% chance vehicle will try to switch lane */
-			CVector2D dist = pNextPathNode->GetPosition() - pCurPathNode->GetPosition();
+			CVector2D dist = (pNextPathNode->GetPosition() - pCurPathNode->GetPosition()).To2D();
 			if (dist.MagnitudeSqr() >= SQR(14.0f)) {
 				if (OLA::GetRandomTrueFalse())
 					m_autoPilot.m_nNextLane += 1;

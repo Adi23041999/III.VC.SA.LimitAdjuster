@@ -27,8 +27,12 @@ class FrameLimitSA : public SimpleAdjuster
         { 
             const int fpsValue = ReadFrameLimitValue( value );
 
-            injector::WriteMemory(0x619626, fpsValue, true); 
-            injector::WriteMemory(0xC1704C, fpsValue, false);
+            int fpsCurrent = injector::ReadMemory<int>(0xC1704C);
+            if (fpsCurrent == 0x1E)
+            {
+                injector::WriteMemory(0x619626, fpsValue, true);
+                injector::WriteMemory(0xC1704C, fpsValue, false);
+            }
         }
         
 } FrameLimitSA;
@@ -41,8 +45,12 @@ public:
     { 
         const int fpsValue = ReadFrameLimitValue( value );
 
-        injector::WriteMemory(0x602D68, fpsValue, true); 
-        injector::WriteMemory(0x9B48EC, fpsValue, false);
+        int fpsCurrent = injector::ReadMemory<int>(0x9B48EC);
+        if (fpsCurrent == 0x1E)
+        {
+            injector::WriteMemory(0x602D68, fpsValue, true);
+            injector::WriteMemory(0x9B48EC, fpsValue, false);
+        }
     }
 
 } FrameLimitVC;
@@ -55,8 +63,12 @@ public:
     { 
         const int fpsValue = ReadFrameLimitValue( value );
 
-        injector::WriteMemory(0x584C78, fpsValue, true); 
-        injector::WriteMemory(0x8F4374, fpsValue, false);
+        int fpsCurrent = injector::ReadMemory<int>(0x8F4374);
+        if (fpsCurrent == 0x1E)
+        {
+            injector::WriteMemory(0x584C78, fpsValue, true);
+            injector::WriteMemory(0x8F4374, fpsValue, false);
+        }
     }
 
 } FrameLimitIII;

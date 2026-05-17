@@ -25,7 +25,7 @@ class CDynamicPool
 
         // Interface must be "compatible" with CPool's interface
         U* 					_m_Objects;         // Always nullptr
-        tPoolObjectFlags* 	m_ByteMap;          // Specifies object state at index
+        tPoolObjectFlagsOLA* 	m_ByteMap;          // Specifies object state at index
         int					m_Size;             // The current size of the pool
         int 				m_nFirstFree;       // Hint of first free index, might be wrong
         bool 				m_bOwnsAllocations; // Do we own our allocations? Of course we do!
@@ -329,7 +329,7 @@ class CDynamicPool
         void ReallocByteMap(int size)
         {
             // Allocation first, so in bad_alloc it returns immediately
-            tPoolObjectFlags* bytemap = new tPoolObjectFlags[size];
+            tPoolObjectFlagsOLA* bytemap = new tPoolObjectFlagsOLA[size];
 
             // Move current bytemap to the new bytemap
             std::copy(m_ByteMap, m_ByteMap + m_Size, bytemap);

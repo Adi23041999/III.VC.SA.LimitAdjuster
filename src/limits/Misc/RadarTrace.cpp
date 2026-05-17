@@ -178,7 +178,7 @@ int RadarTrace::SetCoordBlip(eBlipType type, CVector pos, int32 color, eBlipDisp
 	ms_RadarTrace[nextBlip].m_bDim = 1;
 	ms_RadarTrace[nextBlip].m_bInUse = 1;
 	ms_RadarTrace[nextBlip].m_fSphereRadius = 1.0f;
-	ms_RadarTrace[nextBlip].m_vec2DPos = pos;
+	ms_RadarTrace[nextBlip].m_vec2DPos = pos.To2D();
 	ms_RadarTrace[nextBlip].m_vecPos = pos;
 	ms_RadarTrace[nextBlip].m_nEntityHandle = 0;
 	ms_RadarTrace[nextBlip].m_nBlipSize = 1;

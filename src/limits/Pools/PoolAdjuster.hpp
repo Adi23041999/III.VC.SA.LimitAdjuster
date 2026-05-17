@@ -28,7 +28,7 @@ struct PoolAdjuster : PoolAdjusterBase
 	typedef void* (__fastcall *func_type)(void* self, int dummy, size_t size, const char* name);
 	typedef void* (__fastcall *func_type3)(void* self, int dummy, size_t size); // GTA3
 	typedef injector::hook_back<func_type> hook_back;
-    typedef CPool<char, char> pool_type;
+    typedef CPoolOLA<char, char> pool_type;
 
     static pool_type*& pool() // Pointer to this pool
     { 

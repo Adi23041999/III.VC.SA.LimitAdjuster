@@ -1,6 +1,7 @@
 /*
 * Vehicle Models Adjuster
 * Copyright (c) 2014 LINK/2012 <dma_2012@hotmail.com>
+* Copyright (c) 2026 Adi <adriank3d@gmail.com>
 * Licensed under the MIT License (http://opensource.org/licenses/MIT)
 */
 #include "StoreAdjuster.hpp"
@@ -11,7 +12,32 @@ static injector::hook_back<void*(__fastcall*)(void*)> hb_ctor;
 
 typedef dummy_object_vmt<0x308, 0x4C75E0> CVehicleModelInfo_SA;
 typedef dummy_object_vmt<0x174, 0x57AA20> CVehicleModelInfo_VC;
+typedef dummy_object_vmt<0x1F8, 0x51FB10> CVehicleModelInfo_III;
 
+
+struct VehicleModelsIII : public StoreAdjuster<CVehicleModelInfo_III, 0x8E2DE0, 120>    // T, pDefaultStore, dwDefaultCapacity
+{
+    const char* GetLimitName()
+    {
+        return IsIII() ? "VehicleModels" : nullptr;
+    }
+
+    VehicleModelsIII()
+    {
+        this->SetGrower(0x4779FB);
+        this->AddPointer(0x50B3D0, 0x0);
+        this->AddPointer(0x50B6AE, 0x0);
+        this->AddPointer(0x50B6B6, 0x0);
+        this->AddPointer(0x50B6D6, 0x0);
+        this->AddPointer(0x50B80E, 0x0);
+        this->AddPointer(0x50BA62, 0x0);
+        this->AddPointer(0x50BA7D, 0x0);
+        this->AddPointer(0x50BA83, 0x0);
+        this->AddPointer(0x50BA8E, 0x0);
+        if (GetLimitName()) injector::MakeNOP(0x50BA75, 5, true);
+    }
+
+} VehicleModelsIII;
 
 struct VehicleModelsVC : public StoreAdjuster<CVehicleModelInfo_VC, 0x752A88, 110>    // T, pDefaultStore, dwDefaultCapacity
 {

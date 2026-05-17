@@ -822,7 +822,7 @@ CPathFindRe::RemoveBadStartNode(CVector pos, CPathNodeRe **nodes, int16 *n)
 	int i;
 	if(*n < 2)
 		return;
-	if(DotProduct2D(nodes[1]->GetPosition() - pos, nodes[0]->GetPosition() - pos) < 0.0f){
+	if(DotProduct2D((nodes[1]->GetPosition() - pos).To2D(), (nodes[0]->GetPosition() - pos).To2D()) < 0.0f) {
 		(*n)--;
 		for(i = 0; i < *n; i++)
 			nodes[i] = nodes[i+1];
@@ -1070,7 +1070,7 @@ CPathFindRe::FindNodeOrientationForCarPlacement(int32 nodeId)
 		return 0.0f;
 	CVector dir = m_pathNodes[ConnectedNode(m_pathNodes[nodeId].firstLink)].GetPosition() - m_pathNodes[nodeId].GetPosition();
 	dir.z = 0.0f;
-	dir.Normalise();
+	dir.Normalize();
 	return RADTODEG(dir.Heading());
 }
 
@@ -1080,7 +1080,7 @@ CPathFindRe::FindNodeOrientationForCarPlacementFacingDestination(int32 nodeId, f
 	int i;
 
 	CVector targetDir(x - m_pathNodes[nodeId].GetX(), y - m_pathNodes[nodeId].GetY(), 0.0f);
-	targetDir.Normalise();
+	targetDir.Normalize();
 	CVector dir;
 
 	if(m_pathNodes[nodeId].numLinks == 0)
@@ -1096,8 +1096,8 @@ CPathFindRe::FindNodeOrientationForCarPlacementFacingDestination(int32 nodeId, f
 	for(i = 0; i < m_pathNodes[nodeId].numLinks; i++){
 		dir = m_pathNodes[ConnectedNode(m_pathNodes[nodeId].firstLink + i)].GetPosition() - m_pathNodes[nodeId].GetPosition();
 		dir.z = 0.0f;
-		dir.Normalise();
-		float angle = DotProduct2D(dir, targetDir);
+		dir.Normalize();
+		float angle = DotProduct2D(dir.To2D(), targetDir.To2D());
 		if(towards){
 			if(angle > bestDot){
 				bestDot = angle;
@@ -1113,7 +1113,7 @@ CPathFindRe::FindNodeOrientationForCarPlacementFacingDestination(int32 nodeId, f
 
 	dir = m_pathNodes[bestNode].GetPosition() - m_pathNodes[nodeId].GetPosition();
 	dir.z = 0.0f;
-	dir.Normalise();
+	dir.Normalize();
 	return RADTODEG(dir.Heading());
 }
 
@@ -1131,14 +1131,14 @@ CPathFindRe::NewGenerateCarCreationCoors(float x, float y, float dirX, float dir
 		node1 = (OLA::GetRandomNumber()>>3) % m_numCarPathNodes;
 		if(m_pathNodes[node1].bDisabled && !ignoreDisabled)
 			continue;
-		dist1 = Distance2D(m_pathNodes[node1].GetPosition(), x, y);
+		dist1 = Distance2D(m_pathNodes[node1].GetPosition().To2D(), x, y);
 		if(dist1 < spawnDist + 60.0f){
 			d1 = dist1 - spawnDist;
 			for(j = 0; j < m_pathNodes[node1].numLinks; j++){
 				node2 = ConnectedNode(m_pathNodes[node1].firstLink + j);
 				if(m_pathNodes[node2].bDisabled && !ignoreDisabled)
 					continue;
-				dist2 = Distance2D(m_pathNodes[node2].GetPosition(), x, y);
+				dist2 = Distance2D(m_pathNodes[node2].GetPosition().To2D(), x, y);
 				d2 = dist2 - spawnDist;
 				if(d1*d2 < 0.0f){
 					// nodes are on different sides of spawn distance
@@ -1147,7 +1147,7 @@ CPathFindRe::NewGenerateCarCreationCoors(float x, float y, float dirX, float dir
 					*pPositionBetweenNodes = f2;
 					CVector pos = m_pathNodes[node1].GetPosition()*f1 + m_pathNodes[node2].GetPosition()*f2;
 					CVector2D dist2d(pos.x - x, pos.y - y);
-					dist2d.Normalise();	// done manually in the game
+					dist2d.Normalize();	// done manually in the game
 					float dot = DotProduct2D(dist2d, CVector2D(dirX, dirY));
 					if(forward){
 						if(dot > angleLimit){
@@ -1182,7 +1182,7 @@ CPathFindRe::GeneratePedCreationCoors(float x, float y, float minDist, float max
 
 	for(i = 0; i < 400; i++){
 		node1 = m_numCarPathNodes + OLA::GetRandomNumber() % m_numPedPathNodes;
-		if(DistanceSqr2D(m_pathNodes[node1].GetPosition(), x, y) < sq(maxDist+30.0f)){
+		if(DistanceSqr2D(m_pathNodes[node1].GetPosition().To2D(), x, y) < sq(maxDist + 30.0f)) {
 			if(m_pathNodes[node1].numLinks == 0)
 				continue;
 			int link = m_pathNodes[node1].firstLink + OLA::GetRandomNumber() % m_pathNodes[node1].numLinks;
@@ -1196,10 +1196,10 @@ CPathFindRe::GeneratePedCreationCoors(float x, float y, float minDist, float max
 			float f1 = 1.0f - f2;
 			*pPositionBetweenNodes = f2;
 			CVector pos = m_pathNodes[node1].GetPosition()*f1 + m_pathNodes[node2].GetPosition()*f2;
-			if(Distance2D(pos, x, y) < maxDist+20.0f){
+			if(Distance2D(pos.To2D(), x, y) < maxDist + 20.0f) {
 				pos.x += ((OLA::GetRandomNumber()&0xFF)-128)*0.01f;
 				pos.y += ((OLA::GetRandomNumber()&0xFF)-128)*0.01f;
-				float dist = Distance2D(pos, x, y);
+				float dist = Distance2D(pos.To2D(), x, y);
 
 				bool visible;
 				if(camMatrix)
@@ -1300,8 +1300,8 @@ CPathFindRe::FindNextNodeWandering(uint8 type, CVector coors, CPathNodeRe **last
 		nodeCoors.z += 1.0f;
 		if(!CWorld::GetIsLineOfSightClear(pedCoors, nodeCoors, true, false, false, false, false, false, false))
 			continue;
-		CVector2D nodeDir = m_pathNodes[next].GetPosition() - node->GetPosition();
-		nodeDir.Normalise();
+		CVector2D nodeDir = (m_pathNodes[next].GetPosition() - node->GetPosition()).To2D();
+		nodeDir.Normalize();
 		float dot = DotProduct2D(nodeDir, vCurDir);
 		if(dot >= bestDot){
 			*nextNode = &m_pathNodes[next];

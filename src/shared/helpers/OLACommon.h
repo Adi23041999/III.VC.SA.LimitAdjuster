@@ -4,6 +4,7 @@
 
 #pragma once
 #include "CVector2D.h"
+#include "plugin.h"
 
 typedef uint8_t uint8;
 typedef int8_t int8;
@@ -13,12 +14,11 @@ typedef uint32_t uint32;
 typedef int32_t int32;
 
 #define FIX_BUGS
+#define COMPAT_AIRCRAFT
 #define Max(a,b) ((a) > (b) ? (a) : (b))
 #define Min(a,b) ((a) < (b) ? (a) : (b))
 #define TWOPI (PI*2)
 #define HALFPI (PI/2)
-#define DEGTORAD(x) ((x) * PI / 180.0f)
-#define RADTODEG(x) ((x) * 180.0f / PI)
 inline float sq(float x) { return x * x; }
 #define ARRAY_SIZE(array)                (sizeof(array) / sizeof(array[0]))
 #define SQR(x) ((x) * (x))
@@ -79,5 +79,13 @@ namespace OLA
 	static bool GetRandomTrueFalse(void)
 	{
 		return GetRandomNumber() < MYRAND_MAX / 2;
+	}
+
+	template<typename AT>
+	HMODULE GetModuleHandleFromAddress(AT address)
+	{
+		HMODULE result = nullptr;
+		GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, LPCTSTR(address), &result);
+		return result;
 	}
 }

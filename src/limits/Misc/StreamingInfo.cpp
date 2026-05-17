@@ -6,6 +6,7 @@
 */
 
 #include "LimitAdjuster.h"
+#include "OLACommon.h"
 
 using namespace injector;
 
@@ -14,27 +15,27 @@ size_t infoForModel_t;
 std::vector<char> modelInfoPtrs;
 std::vector<char> aInfoForModel;
 
-short numDefaultModelInfoPtrs = 0;
-int numDefaultTxdStore = 0;
-short numModelInfoPtrs = 0;
-int numTxdStore = 0;
+short NumDefaultModelInfoPtrs = 0;
+int NumDefaultTxdStore = 0;
+short NumModelInfoPtrs = 0;
+int NumTxdStore = 0;
 
 
 // convenience functions as the infoForModel patch relies on the other two but they could be disabled in the ini
 bool ShouldPatchModelInfoPtrs()
-{ return numModelInfoPtrs > 0 && numModelInfoPtrs != numDefaultModelInfoPtrs; }
+{ return NumModelInfoPtrs > 0 && NumModelInfoPtrs != NumDefaultModelInfoPtrs; }
 
 bool ShouldPatchTxdStore()
-{ return numTxdStore > 0 && numTxdStore != numDefaultTxdStore; }
+{ return NumTxdStore > 0 && NumTxdStore != NumDefaultTxdStore; }
 
 bool ShouldPatchInfoForModel()
 { return ShouldPatchModelInfoPtrs() || ShouldPatchTxdStore(); }
 
 short GetNumModelInfoPtrs()
-{ return ShouldPatchModelInfoPtrs() ? numModelInfoPtrs : numDefaultModelInfoPtrs; }
+{ return ShouldPatchModelInfoPtrs() ? NumModelInfoPtrs : NumDefaultModelInfoPtrs; }
 
 int GetNumTxdStore()
-{ return ShouldPatchTxdStore() ? numTxdStore : numDefaultTxdStore; }
+{ return ShouldPatchTxdStore() ? NumTxdStore : NumDefaultTxdStore; }
 
 int GetNumInfoForModel()
 { return GetNumModelInfoPtrs() + GetNumTxdStore(); }
@@ -45,6 +46,7 @@ void PatchStreamingIII()
     if (ShouldPatchModelInfoPtrs())
     {
         short numModelInfoPtrs = GetNumModelInfoPtrs();
+
         // 4 more from unrolled loop
         modelInfoPtrs.resize(((int)numModelInfoPtrs + 4) * modelInfoPtrs_t);
         // modelinfo init loop
@@ -457,6 +459,9 @@ void PatchStreamingIII()
     if (ShouldPatchInfoForModel())
     {
         int numInfoForModel = GetNumInfoForModel();
+        while (numInfoForModel % 8 != 6)
+            ++numInfoForModel;
+        
 	    // The unrolled loop in CStreaming::Init inits 6 more elements
 	    // after looping in 8 element increments because the default
 	    // size 6350 % 8 == 6. We'll just allocate 6 more elements.
@@ -725,10 +730,12 @@ public:
         switch (id)
         {
         case ModelInfoPtrs:
-            numModelInfoPtrs = std::stoi(value);
+            NumModelInfoPtrs = std::stoi(value);
+            while (NumModelInfoPtrs % 8 != 4)
+                ++NumModelInfoPtrs;
             break;
         case TxdStore:
-            numTxdStore = std::stoi(value);
+            NumTxdStore = std::stoi(value);
             break;
         }
 	}
@@ -739,8 +746,8 @@ public:
         {
             modelInfoPtrs_t = 0x30;
             infoForModel_t = 0x14;
-            numDefaultModelInfoPtrs = 5500;
-            numDefaultTxdStore = 850;
+            NumDefaultModelInfoPtrs = 5500;
+            NumDefaultTxdStore = 850;
             PatchStreamingIII();
         }
     }

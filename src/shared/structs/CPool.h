@@ -6,8 +6,9 @@
  */
 #pragma once
 //#include <plugin/plugin.h>
+#include "CPool.h"
 
-union tPoolObjectFlags
+union tPoolObjectFlagsOLA
 {
 	struct
 	{
@@ -17,13 +18,13 @@ union tPoolObjectFlags
 	signed char			b;
 };
 
-template<class A, class B = A> class CPool
+template<class A, class B = A> class CPoolOLA
 {
 public:
     typedef  A base_type;
 
 	B* 					m_Objects;
-	tPoolObjectFlags* 	m_ByteMap;
+	tPoolObjectFlagsOLA* 	m_ByteMap;
 	int					m_Size;
 	int 				m_nFirstFree;
 	bool 				m_bOwnsAllocations;
@@ -31,15 +32,15 @@ public:
 
 
 	// Default constructor for statically allocated pools
-	CPool()
+	CPoolOLA()
 	{
 	}
 
 	// Initializes pool
-	CPool(int nSize, const char* pPoolName)
+	CPoolOLA(int nSize, const char* pPoolName)
 	{
 		m_Objects = static_cast<B*>(operator new(sizeof(B) * nSize));
-		m_ByteMap = static_cast<tPoolObjectFlags*>(operator new(sizeof(tPoolObjectFlags) *  nSize));
+		m_ByteMap = static_cast<tPoolObjectFlagsOLA*>(operator new(sizeof(tPoolObjectFlagsOLA) *  nSize));
 
 		m_Size = nSize;
 		m_nFirstFree = -1;
@@ -52,7 +53,7 @@ public:
 		}
 	}
 
-	~CPool()
+	~CPoolOLA()
 	{
 		Flush();
 	}
@@ -61,7 +62,7 @@ public:
 	void Init(int nSize, void* pObjects, void* pInfos)
 	{
 		m_Objects = static_cast<B*>(operator new(sizeof(B) * nSize));
-		m_ByteMap = static_cast<tPoolObjectFlags*>(operator new(nSize));
+		m_ByteMap = static_cast<tPoolObjectFlagsOLA*>(operator new(nSize));
 
 		m_Size = nSize;
 		m_nFirstFree = -1;
@@ -174,4 +175,4 @@ public:
 	}
 };
 
-static_assert(sizeof(CPool<int>) == 0x14, "...");
+static_assert(sizeof(CPoolOLA<int>) == 0x14, "...");
