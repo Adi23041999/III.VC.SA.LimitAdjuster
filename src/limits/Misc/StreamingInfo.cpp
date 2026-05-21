@@ -1,127 +1,168 @@
-/*
-* Streaming Adjuster
-* Copyright (c) 2016 aap <aap@papnet.eu>
-* Copyright (c) 2025 Adi <adriank3d@gmail.com>
-* Licensed under the MIT License (http://opensource.org/licenses/MIT)
-*/
-
+#include "StreamingInfo.h"
 #include "LimitAdjuster.h"
 #include "OLACommon.h"
 
 using namespace injector;
 
-size_t modelInfoPtrs_t;
-size_t infoForModel_t;
-std::vector<char> modelInfoPtrs;
-std::vector<char> aInfoForModel;
+size_t StreamingInfo::modelInfoPtrs_t = 0;
+size_t StreamingInfo::infoForModel_t = 0;
+std::vector<char> StreamingInfo::modelInfoPtrs;
+std::vector<char> StreamingInfo::aInfoForModel;
 
-short NumDefaultModelInfoPtrs = 0;
-int NumDefaultTxdStore = 0;
-short NumModelInfoPtrs = 0;
-int NumTxdStore = 0;
+short StreamingInfo::NumDefaultModelInfoPtrs = 0;
+int StreamingInfo::NumDefaultTxdStore = 0;
+short StreamingInfo::NumModelInfoPtrs = 0;
+int StreamingInfo::NumTxdStore = 0;
 
+StreamingInfo::StreamingInfo()
+{
+    if (GetGVM().IsIII())
+    {
+        NumDefaultModelInfoPtrs = 5500;
+        NumDefaultTxdStore = 850;
+        modelInfoPtrs_t = 0x30;
+        infoForModel_t = 0x14;
+    }
 
-// convenience functions as the infoForModel patch relies on the other two but they could be disabled in the ini
-bool ShouldPatchModelInfoPtrs()
-{ return NumModelInfoPtrs > 0 && NumModelInfoPtrs != NumDefaultModelInfoPtrs; }
+    NumModelInfoPtrs = NumDefaultModelInfoPtrs;
+    NumTxdStore = NumDefaultTxdStore;
+}
 
-bool ShouldPatchTxdStore()
-{ return NumTxdStore > 0 && NumTxdStore != NumDefaultTxdStore; }
+const StreamingInfo::Limit* StreamingInfo::GetLimits()
+{
+    if (GetGVM().IsIII())
+    {
+        static Limit limits[] =
+        {
+            DEFINE_LIMIT(ModelInfoPtrs),
+            DEFINE_LIMIT(TxdStore),
+            FINISH_LIMITS()
+        };
+        return limits;
+    }
+    return nullptr;
+}
 
-bool ShouldPatchInfoForModel()
+void StreamingInfo::ChangeLimit(int id, const std::string& value)
+{
+    switch (id)
+    {
+    case ModelInfoPtrs:
+        NumModelInfoPtrs = std::stoi(value);
+        break;
+    case TxdStore:
+        NumTxdStore = std::stoi(value);
+        break;
+    }
+}
+
+void StreamingInfo::Process()
+{
+    // aInfoForModel size should not be modified directly but match modelInfoPtrs and TxdStore (+ more in VC) sizes
+    // The unrolled loop in CStreaming::Init inits 6 more elements
+    // after looping in 8 element increments because the default
+    // size 6350 % 8 == 6. We'll just allocate 6 more elements for TxdStore
+
+    if (GetGVM().IsIII())
+    {
+        while (NumModelInfoPtrs % 8 != 4) // 4 extra elements for modelInfoPtrs
+            ++NumModelInfoPtrs;
+        while ((NumModelInfoPtrs + NumTxdStore) % 8 != 6) // 6 extra elements for aInfoForModel
+            ++NumTxdStore;
+
+        PatchStreamingIII();
+    }
+}
+
+bool StreamingInfo::ShouldPatchModelInfoPtrs()
+{ return NumModelInfoPtrs > NumDefaultModelInfoPtrs; }
+
+bool StreamingInfo::ShouldPatchTxdStore()
+{ return NumTxdStore > NumDefaultTxdStore; }
+
+bool StreamingInfo::ShouldPatchInfoForModel()
 { return ShouldPatchModelInfoPtrs() || ShouldPatchTxdStore(); }
 
-short GetNumModelInfoPtrs()
-{ return ShouldPatchModelInfoPtrs() ? NumModelInfoPtrs : NumDefaultModelInfoPtrs; }
-
-int GetNumTxdStore()
-{ return ShouldPatchTxdStore() ? NumTxdStore : NumDefaultTxdStore; }
-
-int GetNumInfoForModel()
-{ return GetNumModelInfoPtrs() + GetNumTxdStore(); }
-
-
-void PatchStreamingIII()
+void StreamingInfo::PatchStreamingIII()
 {
     if (ShouldPatchModelInfoPtrs())
     {
-        short numModelInfoPtrs = GetNumModelInfoPtrs();
-
-        // 4 more from unrolled loop
-        modelInfoPtrs.resize(((int)numModelInfoPtrs + 4) * modelInfoPtrs_t);
+        modelInfoPtrs.resize(NumModelInfoPtrs * modelInfoPtrs_t);
+     
         // modelinfo init loop
-        WriteMemory(0x50B36E + 1, numModelInfoPtrs - 8, true);
+        WriteMemory(0x50B36E + 1, NumModelInfoPtrs - 8, true);
         // patch default limit
-        WriteMemory(0x401121 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x406919 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x406FC0 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40701A + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40702B + 2, numModelInfoPtrs, true);
-        WriteMemory(0x407F06 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x407F74 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x407F88 + 1, numModelInfoPtrs, true);
-        WriteMemory(0x408856 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x408870 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x408911 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x408920 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x408995 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x4089D9 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x408A00 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x408A11 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x409481 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409489 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x4094ED + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40952C + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409554 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x4095BE + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409607 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409654 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x409660 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x409676 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x4096F5 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409711 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x4097AA + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40990F + 1, numModelInfoPtrs, true);
-        WriteMemory(0x409951 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x409996 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x4099B4 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x4099D1 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x409A42 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409A60 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x409A84 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409B18 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409B45 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x409CA8 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409D2E + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409EBD + 2, numModelInfoPtrs, true);
-        WriteMemory(0x409EEA + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40A0D1 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40A0F2 + 2, -numModelInfoPtrs, true);
-        WriteMemory(0x40A1D4 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40A209 + 1, numModelInfoPtrs, true);
-        WriteMemory(0x40A273 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40A58C + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40A7A8 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x40A80F + 1, numModelInfoPtrs, true);
-        WriteMemory(0x40A838 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x454B68 + 3, numModelInfoPtrs, true);
-        WriteMemory(0x476D9C + 2, numModelInfoPtrs, true); 
-        WriteMemory(0x4A6087 + 1, numModelInfoPtrs, true);
-        WriteMemory(0x4A60D0 + 1, numModelInfoPtrs, true);
-        WriteMemory(0x50B5A1 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x50B901 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x50BBEB + 2, numModelInfoPtrs, true);
-        WriteMemory(0x517C51 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x517D43 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x517D4B + 2, numModelInfoPtrs, true);
-        WriteMemory(0x5279A5 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x585066 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x592D7E + 2, numModelInfoPtrs, true);
-        WriteMemory(0x592D93 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x592E71 + 2, numModelInfoPtrs, true);
-        WriteMemory(0x592F0A + 2, numModelInfoPtrs, true);
+        WriteMemory(0x401121 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x406919 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x406FC0 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40701A + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40702B + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x407F06 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x407F74 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x407F88 + 1, NumModelInfoPtrs, true);
+        WriteMemory(0x408856 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x408870 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x408911 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x408920 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x408995 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x4089D9 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x408A00 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x408A11 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x409481 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409489 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x4094ED + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40952C + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409554 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x4095BE + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409607 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409654 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x409660 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x409676 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x4096F5 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409711 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x4097AA + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40990F + 1, NumModelInfoPtrs, true);
+        WriteMemory(0x409951 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x409996 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x4099B4 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x4099D1 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x409A42 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409A60 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x409A84 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409B18 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409B45 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x409CA8 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409D2E + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409EBD + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x409EEA + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40A0D1 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40A0F2 + 2, -NumModelInfoPtrs, true);
+        WriteMemory(0x40A1D4 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40A209 + 1, NumModelInfoPtrs, true);
+        WriteMemory(0x40A273 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40A58C + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40A7A8 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x40A80F + 1, NumModelInfoPtrs, true);
+        WriteMemory(0x40A838 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x454B68 + 3, NumModelInfoPtrs, true);
+        WriteMemory(0x476D9C + 2, NumModelInfoPtrs, true); 
+        WriteMemory(0x4A6087 + 1, NumModelInfoPtrs, true);
+        WriteMemory(0x4A60D0 + 1, NumModelInfoPtrs, true);
+        WriteMemory(0x50B5A1 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x50B901 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x50BBEB + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x517C51 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x517D43 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x517D4B + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x5279A5 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x585066 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x592D7E + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x592D93 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x592E71 + 2, NumModelInfoPtrs, true);
+        WriteMemory(0x592F0A + 2, NumModelInfoPtrs, true);
 
         // patch array refs
+        // TODO: some of the offsets are model IDs, may want to read them first
         WriteMemory(0x4010E3, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x40394D, &modelInfoPtrs[0] + 0x0, true);
         WriteMemory(0x404C0A, &modelInfoPtrs[0] + 0x0, true);
@@ -445,33 +486,27 @@ void PatchStreamingIII()
     }                                                                           
     if (ShouldPatchTxdStore())
     {
-        int numTxdStore = GetNumTxdStore();
-        WriteMemory(0x406977 + 2, numTxdStore, true);
-        WriteMemory(0x527457 + 1, numTxdStore, true);
-        WriteMemory(0x5274CF + 2, numTxdStore, true);
-        WriteMemory(0x592C98 + 1, numTxdStore, true);
-        WriteMemory(0x592CE4 + 1, numTxdStore, true);
-        WriteMemory(0x592D3D + 1, numTxdStore, true);
-        WriteMemory(0x592E32 + 1, numTxdStore, true);
-        WriteMemory(0x592F22 + 2, numTxdStore, true);
-        WriteMemory(0x592F59 + 1, numTxdStore, true);
+        WriteMemory(0x406977 + 2, NumTxdStore, true);
+        WriteMemory(0x527457 + 1, NumTxdStore, true);
+        WriteMemory(0x5274CF + 2, NumTxdStore, true);
+        WriteMemory(0x592C98 + 1, NumTxdStore, true);
+        WriteMemory(0x592CE4 + 1, NumTxdStore, true);
+        WriteMemory(0x592D3D + 1, NumTxdStore, true);
+        WriteMemory(0x592E32 + 1, NumTxdStore, true);
+        WriteMemory(0x592F22 + 2, NumTxdStore, true);
+        WriteMemory(0x592F59 + 1, NumTxdStore, true);
     }
     if (ShouldPatchInfoForModel())
     {
-        int numInfoForModel = GetNumInfoForModel();
-        while (numInfoForModel % 8 != 6)
-            ++numInfoForModel;
-        
-	    // The unrolled loop in CStreaming::Init inits 6 more elements
-	    // after looping in 8 element increments because the default
-	    // size 6350 % 8 == 6. We'll just allocate 6 more elements.
-	    aInfoForModel.resize((numInfoForModel + 6) * infoForModel_t);
-	    // fix loop limit
+        int numInfoForModel = NumModelInfoPtrs + NumTxdStore;
+	    aInfoForModel.resize((numInfoForModel) * infoForModel_t);
+	    
+        // fix loop limit
 	    WriteMemory(0x40664A + 1, numInfoForModel - 8, true);
 
 	    // move array references
         // special handling for these two as they are aInfoForModels but offset by numModelInfoPtrs, 0x8 is LoadState member
-        int infoOffset = (GetNumModelInfoPtrs() * infoForModel_t) + 0x8;
+        int infoOffset = (NumModelInfoPtrs * infoForModel_t) + 0x8;
         WriteMemory(0x40696B, &aInfoForModel[0] + infoOffset, true);
         WriteMemory(0x409ED9, &aInfoForModel[0] + infoOffset, true);
 
@@ -700,56 +735,3 @@ void PatchStreamingIII()
 	    WriteMemory(0x54FF19, &aInfoForModel[0] + 0x9B8, true);
     }
 }
-
-class StreamingInfo : public Adjuster
-{
-public:
-	enum
-	{
-		ModelInfoPtrs,
-		TxdStore,
-	};
-    
-	const Limit* GetLimits()
-	{
-        if (GetGVM().IsIII())
-        {
-            static Limit limits[] =
-            {
-                DEFINE_LIMIT(ModelInfoPtrs),
-                DEFINE_LIMIT(TxdStore),
-                FINISH_LIMITS()
-            };
-            return limits;
-        }
-		return nullptr;
-	}
-
-	void ChangeLimit(int id, const std::string& value)
-	{
-        switch (id)
-        {
-        case ModelInfoPtrs:
-            NumModelInfoPtrs = std::stoi(value);
-            while (NumModelInfoPtrs % 8 != 4)
-                ++NumModelInfoPtrs;
-            break;
-        case TxdStore:
-            NumTxdStore = std::stoi(value);
-            break;
-        }
-	}
-
-    void Process()
-    {
-        if (GetGVM().IsIII())
-        {
-            modelInfoPtrs_t = 0x30;
-            infoForModel_t = 0x14;
-            NumDefaultModelInfoPtrs = 5500;
-            NumDefaultTxdStore = 850;
-            PatchStreamingIII();
-        }
-    }
-
-} StreamingInfo;

@@ -69,6 +69,8 @@ void Script::ChangeLimit(int id, const std::string& value)
 		NumMultiScripts = std::stoi(value);
 		while (NumMultiScripts % 16 != 8)
 			++NumMultiScripts;
+		if (NumMultiScripts <= 120)
+			break;
 
 		MultiScriptArray.resize(4 * NumMultiScripts, 0);
 		
@@ -113,6 +115,8 @@ void Script::ChangeLimit(int id, const std::string& value)
 		while (NumBuildingSwaps % 5 != 0)
 			--NumBuildingSwaps;
 		assert(NumBuildingSwaps > 0);
+		if (NumBuildingSwaps <= 25)
+			break;
 
 		BuildingSwapArray.resize(NumBuildingSwaps + 5);
 
@@ -179,6 +183,8 @@ void Script::ChangeLimit(int id, const std::string& value)
 		while (NumInvisibilitySettings % 5 != 0)
 			--NumInvisibilitySettings;
 		assert(NumInvisibilitySettings > 0);
+		if (NumInvisibilitySettings <= 20)
+			break;
 
 		InvisibilitySettingArray.resize(NumInvisibilitySettings + 5);
 		
