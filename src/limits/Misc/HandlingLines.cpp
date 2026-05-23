@@ -58,6 +58,35 @@ void HandlingLines::ChangeLimit(int, const std::string& value)
 	WriteMemory(0x54E303, &HandlingManager[0], true);
 	WriteMemory(0x5515EF, fWheelFriction, true);
 	WriteMemory(0x551602, fWheelFriction, true);
+	
+	if (NumHandlingLines > 255)
+	{
+		// leftover from when the handling enum was uint8
+
+		// CVehicleModelInfo::SetVehicleComponentFlags
+		MakeNOP(0x5203C2, 1, true);
+		WriteMemory<BYTE>(0x5203C2 + 1, 0x8B, true);
+		 
+		// CAutomobile ctor
+		WriteMemory<WORD>(0x52C802, 0xD989, true);
+		MakeNOP(0x52C802 + 2, 1, true);
+		
+		// CBoat ctor
+		WriteMemory<WORD>(0x53E484, 0xDA89, true);
+		MakeNOP(0x53E484 + 2, 1, true);
+
+		// CHeli ctor
+		MakeNOP(0x54725A, 1, true);
+		WriteMemory<BYTE>(0x54725A + 1, 0x8B, true);
+
+		// CPlane ctor
+		MakeNOP(0x54B1AA, 1, true);
+		WriteMemory<BYTE>(0x54B1AA + 1, 0x8B, true);
+
+		// CTrain ctor
+		MakeNOP(0x54E2F3, 1, true);
+		WriteMemory<BYTE>(0x54E2F3 + 1, 0x8B, true);
+	}
 }
 
 int32 cNewHandlingDataMgr::GetHandlingId(const char* name)

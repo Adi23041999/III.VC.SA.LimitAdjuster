@@ -27,7 +27,7 @@ class FrameLimitSA : public SimpleAdjuster
         { 
             const int fpsValue = ReadFrameLimitValue( value );
 
-            int fpsCurrent = injector::ReadMemory<int>(0xC1704C);
+            int fpsCurrent = injector::ReadMemory<int>(0x619626);
             if (fpsCurrent == 0x1E)
             {
                 injector::WriteMemory(0x619626, fpsValue, true);
@@ -45,7 +45,7 @@ public:
     { 
         const int fpsValue = ReadFrameLimitValue( value );
 
-        int fpsCurrent = injector::ReadMemory<int>(0x9B48EC);
+        int fpsCurrent = injector::ReadMemory<int>(0x602D68);
         if (fpsCurrent == 0x1E)
         {
             injector::WriteMemory(0x602D68, fpsValue, true);
@@ -63,7 +63,7 @@ public:
     { 
         const int fpsValue = ReadFrameLimitValue( value );
 
-        int fpsCurrent = injector::ReadMemory<int>(0x8F4374);
+        int fpsCurrent = injector::ReadMemory<int>(0x584C78);
         if (fpsCurrent == 0x1E)
         {
             injector::WriteMemory(0x584C78, fpsValue, true);
