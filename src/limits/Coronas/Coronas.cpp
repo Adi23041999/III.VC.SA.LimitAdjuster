@@ -45,7 +45,7 @@ void CCoronas::RegisterCorona(unsigned int nID, CEntity* pAttachTo, unsigned cha
     if (pAttachTo)
     {
         // TODO: AllocateMatrix
-        vecPosToCheck = *pAttachTo->GetMatrix() * Position;
+        vecPosToCheck = pAttachTo->GetMatrix() * Position;
     }
     else
         vecPosToCheck = Position;
