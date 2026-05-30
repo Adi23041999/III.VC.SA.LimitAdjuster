@@ -4,6 +4,7 @@
  * http://gtaforums.com/topic/675664-staticshadow-limit/
  */
 #include "LimitAdjuster.h"
+#include "CVector.h"
 #include "Patch.h"
 
 using namespace injector;
@@ -40,6 +41,8 @@ DWORD ext_70BC53 = 0x70BC53;
 std::vector<char> asShadowsStored;
 std::vector<char> aStaticShadows;
 std::vector<char> aPermanentShadows;
+std::vector<int16_t> TempBufferRenderIndexList;
+std::vector<char> TempBufferRenderVertices;
 
 void PatchShadowsStored()
 {
@@ -378,19 +381,19 @@ loc_70BB43:
 
 class StaticShadowsSA : public SimpleAdjuster
 {
-    public:
-        const char* GetLimitName() { return GetGVM().IsSA()? "StaticShadows" : nullptr; }
-        void ChangeLimit(int, const std::string& value) 
-        {
-            SSHADS_LIMIT = std::stoi(value);
-            asShadowsStored.resize(SSHADS_LIMIT * 52);
-            aStaticShadows.resize(SSHADS_LIMIT * 64);
-            aPermanentShadows.resize(SSHADS_LIMIT * 56);
+public:
+    const char* GetLimitName() { return GetGVM().IsSA() ? "StaticShadows" : nullptr; }
+    void ChangeLimit(int, const std::string& value)
+    {
+        SSHADS_LIMIT = std::stoi(value);
+        asShadowsStored.resize(SSHADS_LIMIT * 52);
+        aStaticShadows.resize(SSHADS_LIMIT * 64);
+        aPermanentShadows.resize(SSHADS_LIMIT * 56);
 
-            PatchStaticShadows();
-            PatchShadowsStored();
-            PatchPermanentShadows();
-        }
+        PatchStaticShadows();
+        PatchShadowsStored();
+        PatchPermanentShadows();
+    }
 } StaticShadowsSA;
 
 ///////////////////////THIS THING BELOW MAY NOT WORK!!!///////////////////////////////////////////
@@ -414,120 +417,120 @@ void patch_568F17();
 
 void PatchStaticShadowsVC()
 {
-        aStaticShadows.resize(SSHADS_LIMIT * 64);
+    aStaticShadows.resize(SSHADS_LIMIT * 64);
 
-        AdjustPointer(0x56966E, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C56B, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56E92C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EB1D, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EB71, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EFFD, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F2AF, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x569618, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x569664, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C73C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C7E6, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56E934, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EAEA, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EB13, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EB3C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EC24, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F007, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x569634, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EADD, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EC19, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C3D3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56E94F, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56E998, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBBD, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C3E1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56E972, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56E9C3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBC6, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C3EF, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56E9EE, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBCF, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C387, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C5E1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C632, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EA1A, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBD9, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C3B9, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C5DB, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C62C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EA32, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBE3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C371, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C5D5, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C626, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EA4A, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBED, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C3A3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C5C9, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C620, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EA62, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBFB, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C5BB, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C612, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EAB7, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBAD, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C5B5, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C60C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EAC6, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBB5, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C7AA, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C814, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C81E, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EA87, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EB81, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C931, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EA93, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EB8D, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C757, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C7F8, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C802, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EA7D, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EB77, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C9C2, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EAA1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EB97, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C9B7, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EAAB, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBA1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C9D0, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EAB1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EBA7, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x569622, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x569679, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EA76, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EC05, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C6E5, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C749, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56CB9A, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56962B, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EAD0, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56EC0C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F011, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F01B, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C6EC, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F025, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F02F, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C6F3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F039, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F043, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C6FA, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F04D, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F057, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C701, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F061, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F06B, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C708, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F075, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F07F, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C70F, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F089, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56F093, &aStaticShadows[0], 0x8615A0, 0x8621A0);
-        AdjustPointer(0x56C716, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56966E, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C56B, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56E92C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EB1D, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EB71, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EFFD, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F2AF, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x569618, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x569664, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C73C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C7E6, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56E934, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EAEA, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EB13, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EB3C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EC24, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F007, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x569634, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EADD, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EC19, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C3D3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56E94F, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56E998, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBBD, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C3E1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56E972, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56E9C3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBC6, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C3EF, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56E9EE, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBCF, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C387, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C5E1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C632, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EA1A, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBD9, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C3B9, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C5DB, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C62C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EA32, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBE3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C371, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C5D5, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C626, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EA4A, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBED, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C3A3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C5C9, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C620, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EA62, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBFB, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C5BB, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C612, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EAB7, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBAD, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C5B5, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C60C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EAC6, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBB5, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C7AA, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C814, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C81E, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EA87, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EB81, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C931, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EA93, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EB8D, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C757, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C7F8, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C802, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EA7D, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EB77, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C9C2, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EAA1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EB97, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C9B7, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EAAB, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBA1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C9D0, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EAB1, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EBA7, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x569622, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x569679, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EA76, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EC05, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C6E5, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C749, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56CB9A, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56962B, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EAD0, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56EC0C, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F011, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F01B, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C6EC, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F025, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F02F, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C6F3, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F039, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F043, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C6FA, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F04D, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F057, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C701, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F061, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F06B, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C708, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F075, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F07F, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C70F, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F089, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56F093, &aStaticShadows[0], 0x8615A0, 0x8621A0);
+    AdjustPointer(0x56C716, &aStaticShadows[0], 0x8615A0, 0x8621A0);
 
 
     plugin::patch::RedirectJump(0x56E6C0, patch_56E6C0);
@@ -542,8 +545,36 @@ void PatchStaticShadowsVC()
     plugin::patch::RedirectJump(0x56C7BC, patch_56C7BC);
     plugin::patch::RedirectJump(0x56CBA8, patch_56CBA8);
 
-
     plugin::patch::RedirectJump(0x56CC10, patch_56CC10);
+
+    auto MAX_POLYBUNCHES = SSHADS_LIMIT * 7;
+
+    class CPolyBunch
+    {
+    public:
+        CVector m_aVerts[7];
+        CPolyBunch* m_pNext;
+        int16_t m_nNumVerts;
+        uint8_t m_aU[7];
+        uint8_t m_aV[7];
+
+        CPolyBunch()
+        {
+        }
+    };
+
+    static std::vector<CPolyBunch> aPolyBunches;
+    aPolyBunches.resize(MAX_POLYBUNCHES);
+
+    for (auto i = 0; i < MAX_POLYBUNCHES; i++)
+    {
+        if (i == MAX_POLYBUNCHES - 1)
+            aPolyBunches[i].m_pNext = NULL;
+        else
+            aPolyBunches[i].m_pNext = &aPolyBunches[i + 1];
+    }
+
+    AdjustPointer(0x56F0B2, &aPolyBunches[0], 0x939628 + 0x0, 0x939628 + 0x0);
 }
 
 DWORD ext_56E6C8 = 0x56E6C8;
@@ -738,115 +769,115 @@ void  patch_5148E1();
 
 void PatchStaticShadowsIII()
 {
-        aStaticShadows.resize(SSHADS_LIMIT * 64);
+    aStaticShadows.resize(SSHADS_LIMIT * 64);
 
-        AdjustPointer(0x512CBA, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51321C, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513435, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513482, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514B5B, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x516BE8, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5178CF, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512CC4, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513224, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513454, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51468C, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5146F6, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x516BF2, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513424, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513526, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x516C0D, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51323F, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134D0, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5149D4, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513277, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5132E2, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134D9, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5149E2, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51331F, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134E2, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5149F0, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513360, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134EC, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51495A, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514BE1, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514C32, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513378, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134F6, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5149B0, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514BDB, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514C2C, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513390, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513504, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514931, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514BD5, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514C26, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5133A8, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51350E, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514988, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514BC9, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514C20, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5133FD, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134BE, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514BBB, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514C12, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51340E, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134C8, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514BB5, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514C0C, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5133C3, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513488, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5146A6, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514708, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514712, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5133D9, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51349E, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514778, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5133E7, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134A8, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5147D4, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5133F1, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134B2, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5147DB, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5133F7, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5134B8, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5147E2, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5133BC, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513514, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x516BFB, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x516C28, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514635, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514699, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5148BA, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513418, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51351B, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x516C04, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5133CD, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x513492, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x5146B7, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514724, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51472E, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512CCE, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512CD8, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51463C, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512CE2, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512CEC, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514643, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512CF6, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512D00, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51464A, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512D0A, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512D14, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514651, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512D1E, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512D28, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514658, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512D32, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512D3C, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x51465F, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512D46, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x512D50, &aStaticShadows[0], 0x773BE8, 0x77430E);
-        AdjustPointer(0x514666, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512CBA, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51321C, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513435, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513482, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514B5B, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x516BE8, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5178CF, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512CC4, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513224, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513454, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51468C, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5146F6, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x516BF2, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513424, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513526, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x516C0D, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51323F, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134D0, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5149D4, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513277, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5132E2, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134D9, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5149E2, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51331F, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134E2, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5149F0, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513360, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134EC, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51495A, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514BE1, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514C32, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513378, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134F6, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5149B0, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514BDB, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514C2C, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513390, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513504, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514931, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514BD5, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514C26, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5133A8, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51350E, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514988, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514BC9, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514C20, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5133FD, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134BE, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514BBB, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514C12, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51340E, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134C8, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514BB5, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514C0C, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5133C3, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513488, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5146A6, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514708, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514712, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5133D9, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51349E, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514778, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5133E7, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134A8, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5147D4, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5133F1, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134B2, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5147DB, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5133F7, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5134B8, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5147E2, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5133BC, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513514, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x516BFB, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x516C28, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514635, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514699, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5148BA, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513418, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51351B, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x516C04, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5133CD, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x513492, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x5146B7, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514724, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51472E, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512CCE, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512CD8, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51463C, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512CE2, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512CEC, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514643, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512CF6, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512D00, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51464A, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512D0A, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512D14, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514651, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512D1E, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512D28, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514658, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512D32, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512D3C, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x51465F, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512D46, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x512D50, &aStaticShadows[0], 0x773BE8, 0x77430E);
+    AdjustPointer(0x514666, &aStaticShadows[0], 0x773BE8, 0x77430E);
 
     plugin::patch::RedirectJump(0x513214, patch_513214);
     plugin::patch::RedirectJump(0x51322B, patch_51322B);
@@ -860,6 +891,35 @@ void PatchStaticShadowsIII()
 
     plugin::patch::RedirectJump(0x512D58, patch_512D58);
     plugin::patch::RedirectJump(0x516C30, patch_516C30);
+
+    auto MAX_POLYBUNCHES = SSHADS_LIMIT * 7;
+
+    class CPolyBunch
+    {
+    public:
+        int16_t m_nNumVerts;
+        CVector m_aVerts[7];
+        uint8_t m_aU[7];
+        uint8_t m_aV[7];
+        CPolyBunch* m_pNext;
+
+        CPolyBunch()
+        {
+        }
+    };
+
+    static std::vector<CPolyBunch> aPolyBunches;
+    aPolyBunches.resize(MAX_POLYBUNCHES);
+
+    for (auto i = 0; i < MAX_POLYBUNCHES; i++)
+    {
+        if (i == MAX_POLYBUNCHES - 1)
+            aPolyBunches[i].m_pNext = NULL;
+        else
+            aPolyBunches[i].m_pNext = &aPolyBunches[i + 1];
+    }
+
+    AdjustPointer(0x512D6F, &aPolyBunches[0], 0x86F4C8 + 0x0, 0x86F4C8 + 0x0);
 }
 
 DWORD ext_51321A = 0x51321A;
